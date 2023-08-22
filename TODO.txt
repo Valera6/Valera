@@ -1,0 +1,8 @@
+Next steps:
+
+request klines with params
+
+        |
+        \/
+
+turn to json 
