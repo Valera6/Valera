@@ -1,12 +1,5 @@
-[package]
-name = "valera_requests"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-reqwest = "*"
-tokio = { version = "1", features = ["full"] }
-chrono = "*"
-eyre = "*"
+[workspace]
+members = ["valera", "valera-*", "tests", "examples/*"]
+default-members = ["valera", "valera-*"]
+# exclude = [] // could be used in case one of the above is empty (most often that will be an example. With this could create crates for them preventively
+resolver = "2"
