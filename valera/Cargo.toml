@@ -1,0 +1,17 @@
+[package]
+name = "valera"
+version = "0.1.0"
+# categories = ["asynchronous", "network-programming", "web-programming::http-server"]
+description = "Standardizes klines objects, their rendering and DS methods implemented on them"
+edition = "2021"
+rust-version = "1.71"
+homepage = "https://github.com/Valera6/valera"
+# keywords = ["http", "web", "framework"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/Valera6/valera"
+
+
+
+[dependencies]
+chrono = "*"
