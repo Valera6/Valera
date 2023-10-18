@@ -1,0 +1,17 @@
+[package]
+name = "valera-utils"
+version = "0.1.1"
+edition = "2021"
+description = "Standardizes klines objects, their rendering, and DS methods implemented on them"
+rust-version = "1.74"
+homepage = "https://github.com/Valera6/valera"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/Valera6/valera"
+
+[dependencies]
+backtrace = { workspace = true }
+reqwest = { workspace = true }
+rodio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

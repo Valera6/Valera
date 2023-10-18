@@ -1,0 +1,22 @@
+[package]
+name = "valera"
+version = "0.1.0"
+description = "Standardizes klines objects, their rendering, and DS methods implemented on them"
+edition = "2021"
+rust-version = "1.72"
+homepage = "https://github.com/Valera6/valera"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/Valera6/valera"
+
+[dependencies]
+valera-utils = { path = "../valera-utils" }
+chrono = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+polars = { workspace = true }
+anyhow = { workspace = true }
+plotly = { workspace = true }
+dashmap = { workspace = true }

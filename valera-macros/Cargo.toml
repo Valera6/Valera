@@ -1,0 +1,10 @@
+[package]
+name = "valera-macros"
+version = "0.0.0"
+edition = "2021"
+description = "Standardizes klines objects, their rendering, and DS methods implemented on them"
+rust-version = "1.72"
+homepage = "https://github.com/Valera6/valera"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/Valera6/valera"

@@ -1,0 +1,22 @@
+[workspace]
+members = ["valera", "valera-*", "tests", "examples/*"]
+default-members = ["valera", "valera-*"]
+# exclude = [] // could be used in case one of the above is empty (most often that will be an example. With this could create crates for them preventively
+resolver = "2"
+
+[workspace.dependencies]
+polars = { version = "0.32.1", features = ["nightly", "parquet", "lazy", "polars-io", "serde", "serde-lazy", "json", "rows", "streaming"] } # , "performant", "cse" // cost compilation time.
+chrono = "^0.4.28"
+reqwest = { version = "^0.11.20", features = ["json", "socks", "blocking"] }
+tokio = { version = "^1", features = ["full"] }
+serde = { version = "^1", features =  ["derive", "serde_derive"] }
+serde_json = "^1"
+backtrace = "^0.3.69"
+rodio = "^0"
+anyhow = "^1.0.75"
+plotly = { version = "^0.8.4", features = ["kaleido"] }
+dashmap = "5.5.3"
+
+[profile.dev]
+opt-level = 0
+# incremental = false
