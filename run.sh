@@ -9,3 +9,5 @@ alias t="cargo test"
 alias f="cargo run tests"
 # e for executable
 # alias e="my_todo"
+alias g="git add -A && git commit -m '.' && git push"
+
