@@ -157,25 +157,9 @@ impl Request for Binance {
 #[derive(Deserialize, Debug)]
 struct KlinesResponse(Vec<HashMap<String, String>>);
 
-impl Binance {
-	//todo:
-	// pub fn get_klines(&self, market: Market, symbol: &dyn Symbol, start_time: Timestamp, end_time: Timestamp, tf: Timeframe) -> Klines {}
-}
-
 use std::fmt;
 impl fmt::Debug for Binance {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "{:?}", self.symbols)
 	}
 }
-
-//dbg
-// #[cfg(test)]
-// mod exchanges_binance {
-// 	#[test]
-// 	fn test_get_klines() {
-// 		let b = Binance::new();
-// 		let k = b.get_klines("binance-perp".into(), &UsdtSymbol::from("BTCUSDT"), Timestamp::now().subtract(3 * 5 * 60), Timestamp::now(), "5m".into());
-// 		assert!(k);
-// 	}
-// }

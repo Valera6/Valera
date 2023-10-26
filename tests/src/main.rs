@@ -10,7 +10,7 @@ use valera::types::*;
 #[tokio::main]
 async fn main() {
 	let payloads = requests::db_infrastructure::build_payloads("main-trades-log");
-	requests::schedulers::collect_trades(payloads, Market::BinancePerp).await; //will overwrite existing load in the corresponding `ongoing_collection/` dir
+	requests::schedulers::collect_trades(payloads, Providers::BinancePerp).await; //will overwrite existing load in the corresponding `ongoing_collection/` dir
 
 	// 2) pull norm volumes against weighted last 4-1m.
 

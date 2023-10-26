@@ -9,7 +9,7 @@ use polars::prelude::*;
 #[derive(Debug, Default)]
 pub struct Klines {
 	pub df: DataFrame,
-	pub market: Market,
+	pub market: Providers,
 	pub tf: Timeframe,
 	pub normalized: bool,
 	pub full: bool,

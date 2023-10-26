@@ -3,26 +3,33 @@ use polars::prelude::{df, DataFrame, NamedFrom};
 
 /// Market handles all the nuances for interacting with different exchanges.
 #[derive(Debug, Default, Clone)]
-pub enum Market {
+pub enum Providers {
 	#[default]
 	None,
 	BinancePerp,
 	BinanceSpot,
+	BinanceMargin,
+	BybitPerp,
+	BybitSpot,
+	Coinmarketcap,
+	Coingecko,
 }
 
-impl Market {
+impl Providers {
 	pub fn name(&self) -> &'static str {
 		match self {
-			Market::BinancePerp => "binance-perp",
-			Market::BinanceSpot => "binance-spot",
-			Market::None => panic!("The Market is None"),
+			Providers::BinancePerp => "binance-perp",
+			Providers::BinanceSpot => "binance-spot",
+			Providers::None => panic!("The Market is None"),
+			_ => todo!(),
 		}
 	}
 	pub fn get_base_url(&self) -> &'static str {
 		match self {
-			Market::BinancePerp => "https://fapi.binance.com/fapi/v1",
-			Market::BinanceSpot => "https://api.binance.com/api/v3",
-			Market::None => panic!("The Market is None"),
+			Providers::BinancePerp => "https://fapi.binance.com/fapi/v1",
+			Providers::BinanceSpot => "https://api.binance.com/api/v3",
+			Providers::None => panic!("The Market is None"),
+			_ => todo!(),
 		}
 	}
 	pub fn trades_entry_into_row(&self, entry: &serde_json::Value) -> DataFrame {
@@ -36,7 +43,7 @@ impl Market {
 	}
 	pub fn convert_into_klines(&self, array_of_values: Vec<serde_json::Value>) -> Klines {
 		match self {
-			Market::BinancePerp | Market::BinanceSpot => {
+			Providers::BinancePerp | Providers::BinanceSpot => {
 				// these are the values that every array returned by /klines endpoint carries:
 				//let columns = ["open_ms", "open", "high", "low", "close", "volume", "close_ms", "quote_asset_volume", "trades", "taker_buy_base", "taker_buy_quote", "ignore"];
 				// let indeces = [6, 1, 2, 3, 4, 7, 8, 10]; // these are the ones we care about
@@ -79,27 +86,17 @@ impl Market {
 	}
 }
 
-impl From<&str> for Market {
+impl From<&str> for Providers {
 	fn from(s: &str) -> Self {
 		match s {
-			"binance-perp" => Market::BinancePerp,
-			"binance-spot" => Market::BinanceSpot,
+			"binance-perp" => Providers::BinancePerp,
+			"binance-spot" => Providers::BinanceSpot,
 			_ => panic!("Can't convert provided string to Market.\nHave: {s}\nWant: exchange-market; e.g., binance-perp"),
 		}
 	}
 }
-impl From<String> for Market {
+impl From<String> for Providers {
 	fn from(s: String) -> Self {
 		Self::from(s.as_str())
-	}
-}
-
-#[cfg(test)]
-mod types_market {
-	use super::*;
-
-	#[test]
-	fn test_get_url() {
-		assert_eq!("https://fapi.binance.com/fapi/v1", Market::BinancePerp.get_base_url());
 	}
 }

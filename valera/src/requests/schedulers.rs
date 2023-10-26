@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-async fn load_trades_over_interval(exchange: Arc<Binance>, payload: TradesPayload, market: Market, mut base_path: PathBuf) -> Result<()> {
+async fn load_trades_over_interval(exchange: Arc<Binance>, payload: TradesPayload, market: Providers, mut base_path: PathBuf) -> Result<()> {
 	let symbol = payload.symbol;
 	let start_time = payload.start_time;
 	let end_time = payload.end_time;
@@ -74,7 +74,7 @@ async fn load_trades_over_interval(exchange: Arc<Binance>, payload: TradesPayloa
 }
 
 /// Function that schedules the `get_trades()` in batches of 30. Later will be upgraded to be unlimited, taking advantage of streaming directly into the according files on every yield, but that I haven't figured out yet.
-pub async fn collect_trades(mut payloads: Vec<TradesPayload>, market: Market) {
+pub async fn collect_trades(mut payloads: Vec<TradesPayload>, market: Providers) {
 	//todo assert Timeframe is a valide Binance timeframe ( currently is true by the virtue of current implementation, but that will change )
 
 	let exchange = Arc::new(Binance::new().await);
@@ -117,7 +117,7 @@ pub async fn collect_trades(mut payloads: Vec<TradesPayload>, market: Market) {
 
 //? should it be here or at say transformers.rs
 pub async fn get_closes_df() -> DataFrame {
-	let mut k = get_24hr(Market::BinancePerp).await;
+	let mut k = get_24hr(Providers::BinancePerp).await;
 
 	let mut closes_init: Vec<Series> = Vec::new();
 	// probably will add shared index later, for now without it.
@@ -130,7 +130,7 @@ pub async fn get_closes_df() -> DataFrame {
 	DataFrame::new(closes_init).unwrap()
 }
 
-pub async fn get_24hr(market: Market) -> HashMap<String, Klines> {
+pub async fn get_24hr(market: Providers) -> HashMap<String, Klines> {
 	let b = Binance::new().await;
 	//todo make be based on market
 	let url = "https://fapi.binance.com/fapi/v1/klines";
