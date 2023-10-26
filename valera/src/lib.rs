@@ -37,7 +37,7 @@
 	nonstandard_style,
 	missing_debug_implementations
 )] //, missing_docs)]
-#![deny(unreachable_pub, private_in_public)]
+#![deny(unreachable_pub)]
 #![allow(elided_lifetimes_in_paths, clippy::type_complexity)]
 // #![allow(dead_code, unused_imports, unused_variables)] //dbg
 #![allow(non_snake_case)]
