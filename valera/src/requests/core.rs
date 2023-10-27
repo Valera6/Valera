@@ -87,7 +87,7 @@ async fn request(&self, url: &str, params: HashMap<&str, &str>) -> Result<Vec<se
 async fn r(url: &str) -> serde_json::Value {
 	reqwest::get(url)
 		.await
-		.expect("Failed to fetch from spot endpoint")
+		.expect("Failed to fetch from endpoint")
 		.json::<serde_json::Value>()
 		.await
 		.expect("Failed to deserialize response")

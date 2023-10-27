@@ -1,7 +1,6 @@
 use crate::types::Klines;
 use polars::prelude::{df, DataFrame, NamedFrom};
 
-/// Market handles all the nuances for interacting with different exchanges.
 #[derive(Debug, Default, Clone)]
 pub enum Providers {
 	#[default]
@@ -16,7 +15,7 @@ pub enum Providers {
 }
 
 impl Providers {
-	pub fn name(&self) -> &'static str {
+	pub fn get_name(&self) -> &'static str {
 		match self {
 			Providers::BinancePerp => "binance-perp",
 			Providers::BinanceSpot => "binance-spot",

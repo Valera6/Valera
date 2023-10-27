@@ -62,14 +62,6 @@ impl Binance {
 	}
 }
 
-/// Request has .requests() for queries with multiple coins and its individual-case .request(), which is just a shorthand for calling the former, but for one symbol only.
-/// On my side I'm trying to split the provided params into the smallest number of separate queries possible, and then running them concurrently in a 429-aware manner.
-pub trait Request {
-	async fn requests(&self, url: &str, symbols: Vec<&str>, params: HashMap<&str, &str>) -> Result<HashMap<String, Vec<serde_json::Value>>>;
-	async fn request(&self, url: &str, params: HashMap<&str, &str>) -> Result<Vec<serde_json::Value>>;
-	async fn r(url: &str) -> serde_json::Value;
-}
-
 //cool in reqwest-middleware we have enum Retryable for classifying status codes returned by reqwest
 // Might just copy their code instead of importing the lib. Should be pretty darn simple, considering the codes are mostly constant.
 impl Request for Binance {
