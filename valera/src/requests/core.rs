@@ -6,18 +6,7 @@ use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use tokio::task::spawn;
 
-//// Request has .requests() for queries with multiple coins and its individual-case .request(), which is just a shorthand for calling the former, but for one symbol only.
-/// On my side I'm trying to split the provided params into the smallest number of separate queries possible, and then running them concurrently in a 429-aware manner.
-//cool in reqwest-middleware we have enum Retryable for classifying status codes returned by reqwest
-// Might just copy their code instead of importing the lib. Should be pretty darn simple, considering the codes are mostly constant.
-
 async fn requests(&self, exchange: Arc<Binance>, url: &str, symbols: Vec<&str>, params: HashMap<&str, &str>) -> Result<HashMap<String, Vec<serde_json::Value>>> {
-	// no need to have Market here - I'll attach it to the exchange object itself
-
-	// the name of the symbol parameter is going to be infered from the Market, because why wouldn't it be
-	// so no need to pass it as a separate argument, or leave one key in the params have "" for value.
-	//todo a full function for processing params here, based on the knowledge that it's for Binance.
-
 	async fn perform_requests(client: reqwest::Client, url: String, symbols: Vec<String>, params: HashMap<String, String>) -> Result<HashMap<String, Vec<serde_json::Value>>> {
 		let mut handles = Vec::new();
 
@@ -78,12 +67,11 @@ async fn requests(&self, exchange: Arc<Binance>, url: &str, symbols: Vec<&str>, 
 	let future = perform_requests(client, u, s, p);
 	future.await
 }
-async fn request(&self, url: &str, params: HashMap<&str, &str>) -> Result<Vec<serde_json::Value>> {
-	// This will be an individual case for the requests. Client-facing only, so don't need it now.
-	// Not gonna do it now to prevent introducing inconsistencies until all abstractions are fixed.
-	// No need for speed in these things, so we just wrap the provided values in a layer of generalization, pass to requests, then unwrap and pass out.
-	todo!();
-}
+// async fn request(&self, url: &str, params: HashMap<&str, &str>) -> Result<Vec<serde_json::Value>> {
+// 	// This will be an individual case for the requests. Client-facing only, so don't need it now.
+// 	// Not gonna do it now to prevent introducing inconsistencies until all abstractions are fixed.
+// 	todo!();
+// }
 async fn r(url: &str) -> serde_json::Value {
 	reqwest::get(url)
 		.await
