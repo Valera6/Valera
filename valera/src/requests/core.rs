@@ -12,7 +12,7 @@ use tokio::task::spawn;
 // Might just copy their code instead of importing the lib. Should be pretty darn simple, considering the codes are mostly constant.
 
 async fn requests(&self, exchange: Arc<Binance>, url: &str, symbols: Vec<&str>, params: HashMap<&str, &str>) -> Result<HashMap<String, Vec<serde_json::Value>>> {
-	// no need to have Markte here - I'll attach it to the exchange object itself
+	// no need to have Market here - I'll attach it to the exchange object itself
 
 	// the name of the symbol parameter is going to be infered from the Market, because why wouldn't it be
 	// so no need to pass it as a separate argument, or leave one key in the params have "" for value.
