@@ -5,15 +5,17 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-async fn load_trades_over_interval(exchange: Arc<Binance>, payload: TradesPayload, market: Providers, mut base_path: PathBuf) -> Result<()> {
-	let symbol = payload.symbol;
-	let start_time = payload.start_time;
-	let end_time = payload.end_time;
-	let id = payload.id;
+use crate::requests::types::*;
+
+async fn load_trades_over_interval(exchange: Arc<Binance>, params: TradesParams, market: Providers, mut base_path: PathBuf) -> Result<()> {
+	let symbol = params.symbol;
+	let start_time = params.start_time;
+	let end_time = params.end_time;
+	let id = params.id;
 
 	let base_url = market.get_base_url();
 	//todo make this also be determined by Market:
-	let api_key = "AZ9qXn8S1RCJWur3bfKSsbWWKB9lNOESywiFoKF8WAh2xyHFAT6euDYuuKJr2CXg";
+	let api_key = std::env::var("BINANCE_KEY_API_KEY").unwrap();
 
 	let find_fromId = async {
 		let url = format!("{}/aggTrades?symbol={}&startTime={}&limit=1", &base_url, &symbol, &start_time.ms);
@@ -41,13 +43,7 @@ async fn load_trades_over_interval(exchange: Arc<Binance>, payload: TradesPayloa
 
 		let r = client.get(url.as_str()).query(&params).headers(headers.clone()).send().await.unwrap();
 		// todo match statement, printing out r if it doesn't have headers. In the perfect world check the code, and never print out the same error code twice.
-		let header_used = r.headers().get("x-mbx-used-weight-1m").unwrap();
-
-		if let Ok(used_str) = header_used.to_str() {
-			if let Ok(used) = used_str.parse::<i32>() {
-				exchange.rate_limits.get("normal").unwrap().update(used).await;
-			}
-		}
+		exchange.rate_limits.get("normal").unwrap().update(&r).await;
 
 		let r_json = r.json::<serde_json::Value>().await.unwrap();
 
@@ -77,7 +73,18 @@ pub async fn collect_trades(mut payloads: Vec<TradesPayload>, market: Providers)
 
 	let exchange = Arc::new(Binance::new().await);
 	// the following will be done for each proxy thread of the carousel:
-	exchange.rate_limits.insert("normal".to_owned(), RateLimit::new());
+	//TODO!!!: move to the provider
+	let calc_used = |current_used: i32, r: &reqwest::Response| -> i32 {
+		let header_value = r.headers().get("x-mbx-used-weight-1m").unwrap();
+		match header_value.to_str() {
+			Ok(used_str) => used_str.parse::<i32>().unwrap_or(current_used),
+			Err(_) => {
+				eprintln!("Error: failed to extract new used from reqwest::Response");
+				current_used
+			}
+		}
+	};
+	exchange.rate_limits.insert("normal".to_owned(), RateLimit::build(5500, calc_used));
 
 	use std::fs;
 	let mut dump_path = PathBuf::from("ongoing_collection");

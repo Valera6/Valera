@@ -6,7 +6,9 @@ use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use tokio::task::spawn;
 
-async fn requests(&self, exchange: Arc<Binance>, url: &str, symbols: Vec<&str>, params: HashMap<&str, &str>) -> Result<HashMap<String, Vec<serde_json::Value>>> {
+use crate::requests::types::*;
+
+async fn naked_request(url: &str, payload: Vec<HashMap<&str, &str>>, rate_limit: RateLimit) -> Result<HashMap<String, Vec<serde_json::Value>>> {
 	async fn perform_requests(client: reqwest::Client, url: String, symbols: Vec<String>, params: HashMap<String, String>) -> Result<HashMap<String, Vec<serde_json::Value>>> {
 		let mut handles = Vec::new();
 
@@ -67,6 +69,7 @@ async fn requests(&self, exchange: Arc<Binance>, url: &str, symbols: Vec<&str>, 
 	let future = perform_requests(client, u, s, p);
 	future.await
 }
+//? do I want this
 // async fn request(&self, url: &str, params: HashMap<&str, &str>) -> Result<Vec<serde_json::Value>> {
 // 	// This will be an individual case for the requests. Client-facing only, so don't need it now.
 // 	// Not gonna do it now to prevent introducing inconsistencies until all abstractions are fixed.
