@@ -63,10 +63,8 @@ impl RateLimit {
 		eprintln!("#From RateLimit# Used: {}", self.used);
 	}
 	pub fn sleep_if_needed(&self) {
-		let minute = self.minute.lock().unwrap();
-		let used = self.used.load(Ordering::Relaxed);
-		if used > (self.threshold as f32 * 0.9) as i32 {
-			let stored_minute = NaiveDateTime::parse_from_str(&minute, "%Y-%m-%d %H:%M").expect("failed to parse the provided minute string of RateLimit");
+		if self.used > (self.threshold as f32 * 0.9) as i32 {
+			let stored_minute = NaiveDateTime::parse_from_str(&self.minute, "%Y-%m-%d %H:%M").expect("failed to parse the provided minute string of RateLimit");
 			let next_minute = stored_minute + chrono::Duration::minutes(1);
 			let current_time = Utc::now().naive_utc();
 			let duration = next_minute.signed_duration_since(current_time);
