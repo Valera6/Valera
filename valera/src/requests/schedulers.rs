@@ -31,19 +31,13 @@ async fn load_trades_over_interval(exchange: Arc<Binance>, params: TradesParams,
 	params.insert("limit", "1000");
 	params.insert("fromId", &find_fromId);
 
-	let mut headers = reqwest::header::HeaderMap::new();
-	headers.insert("X-MBX-APIKEY", api_key.parse().unwrap());
-	headers.insert("Content-Type", "application/x-www-form-urlencoded".parse().unwrap());
-
-	let client = reqwest::Client::new();
 	let mut last_reached_ms = *start_time.get_ms();
 	let mut buffer_df = DataFrame::default();
 	while last_reached_ms < end_time.ms {
-		exchange.rate_limits.get("normal").unwrap().sleep_if_needed();
+		r = client::request(ulr, params)?.await();
 
-		let r = client.get(url.as_str()).query(&params).headers(headers.clone()).send().await.unwrap();
 		// todo match statement, printing out r if it doesn't have headers. In the perfect world check the code, and never print out the same error code twice.
-		exchange.rate_limits.get("normal").unwrap().update(&r).await;
+		client.rate_limits.get("normal").unwrap().update(&r).await;
 
 		let r_json = r.json::<serde_json::Value>().await.unwrap();
 
