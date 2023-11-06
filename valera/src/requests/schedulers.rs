@@ -68,11 +68,9 @@ async fn load_trades_over_interval(exchange: Arc<Binance>, params: TradesParams,
 }
 
 /// Function that schedules the `get_trades()` in batches of 30. Later will be upgraded to be unlimited, taking advantage of streaming directly into the according files on every yield, but that I haven't figured out yet.
-pub async fn collect_trades(mut payloads: Vec<TradesPayload>, market: Providers) {
-	//todo assert Timeframe is a valide Binance timeframe ( currently is true by the virtue of current implementation, but that will change )
-
-	let exchange = Arc::new(Binance::new().await);
+pub async fn collect_trades(mut payloads: Vec<TradesParams>, client: Arc<Client>) {
 	// the following will be done for each proxy thread of the carousel:
+
 	//TODO!!!: move to the provider
 	let calc_used = |current_used: i32, r: &reqwest::Response| -> i32 {
 		let header_value = r.headers().get("x-mbx-used-weight-1m").unwrap();

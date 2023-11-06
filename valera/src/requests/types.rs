@@ -43,7 +43,7 @@ impl RateLimit {
 	pub async fn update(&self, r: &Response) {
 		//TODO!!!!!!: change to direct acquiring of the value's lock.
 		let current_used: i32 = self.used.load(Ordering::Relaxed);
-		
+
 		let new_used: i32 = (self.calc_used)(current_used, r);
 
 		let current_minute = Self::now_minute();
@@ -67,7 +67,7 @@ impl RateLimit {
 			let duration = next_minute.signed_duration_since(current_time);
 			let sleep_ms = duration.num_milliseconds();
 			if sleep_ms > 0 {
-				eprintln!("Hit the threshold, sleeping for {}ms", &sleep_ms);
+				eprintln!("Hit 90% of the threshold, sleeping for {}ms", &sleep_ms);
 				std::thread::sleep(std::time::Duration::from_millis(sleep_ms as u64));
 			}
 		}
