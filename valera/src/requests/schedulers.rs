@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::requests::types::*;
 
-async fn load_trades_over_interval(exchange: Arc<Binance>, params: TradesParams, market: Providers, mut base_path: PathBuf) -> Result<()> {
+async fn load_trades_over_interval(exchange: Arc<Binance>, params: TradesParams, client: Arc<Client>, mut base_path: PathBuf) -> Result<()> {
 	let symbol = params.symbol;
 	let start_time = params.start_time;
 	let end_time = params.end_time;

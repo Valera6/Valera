@@ -1,15 +1,16 @@
 use crate::types::*;
 use chrono::{NaiveDateTime, Utc};
 use reqwest::Response;
+use std::fmt;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Mutex;
 
-//#[derive(Debug, Clone)]
-//pub struct Client {
-//
-//}
+#[derive(Debug)]
+pub struct Client {
+	api_key: String,
+	rate_limit: Mutex<RateLimit>,
+}
 
-//TODO: probably put into enum `Params`
 #[derive(Debug, Clone)]
 pub struct TradesParams {
 	pub symbol: String,
@@ -24,11 +25,24 @@ impl TradesParams {
 	}
 }
 
+pub enum Params {
+	TradesParams,
+}
+
 pub struct RateLimit {
 	minute: Mutex<String>,
 	used: AtomicI32,
 	threshold: i32,
 	calc_used: Box<dyn Fn(i32, &reqwest::Response) -> i32>,
+}
+impl fmt::Debug for RateLimit {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		f.debug_struct("RateLimit")
+			.field("minute", &self.minute.lock().unwrap())
+			.field("used", &self.used.load(std::sync::atomic::Ordering::SeqCst))
+			.field("threshold", &self.threshold)
+			.finish()
+	}
 }
 
 impl RateLimit {
