@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::requests::types::*;
 
-async fn load_trades_over_interval(exchange: Arc<Binance>, params: TradesParams, client: Arc<Client>, mut base_path: PathBuf) -> Result<()> {
+async fn load_trades_over_interval(provider: &Provider, params: TradesParams, client: Arc<Client>, mut base_path: PathBuf) -> Result<()> {
 	let symbol = params.symbol;
 	let start_time = params.start_time;
 	let end_time = params.end_time;
@@ -34,10 +34,11 @@ async fn load_trades_over_interval(exchange: Arc<Binance>, params: TradesParams,
 	let mut last_reached_ms = *start_time.get_ms();
 	let mut buffer_df = DataFrame::default();
 	while last_reached_ms < end_time.ms {
-		r = client::request(ulr, params)?.await();
-
-		// todo match statement, printing out r if it doesn't have headers. In the perfect world check the code, and never print out the same error code twice.
-		client.rate_limits.get("normal").unwrap().update(&r).await;
+		// In the perfect world check the code, and never print out the same error code twice.
+		r = match client::request(ulr, params)?.await() {
+			Error(e) => eprintln!("Request errored: {}", e),
+			Result(response) => response,
+		};
 
 		let r_json = r.json::<serde_json::Value>().await.unwrap();
 

@@ -10,7 +10,6 @@ pub struct Client {
 	api_key: String,
 	rate_limit: Mutex<RateLimit>,
 }
-// sleep_if_needed();
 impl Client {
 	pub async fn request(&self, url: String, params: &HashMap<&str, &str>) -> Result<reqwest::Response> {
 		let mut headers = reqwest::header::HeaderMap::new();

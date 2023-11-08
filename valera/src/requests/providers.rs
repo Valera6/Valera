@@ -1,12 +1,13 @@
-use crate::types::Klines;
+use crate::requests::client::Client;
+use crate::types::klines;
 use polars::prelude::{df, DataFrame, NamedFrom};
 
 #[derive(Debug, Default, Clone)]
 pub enum Providers {
 	#[default]
 	None,
-	BinancePerp,
-	BinanceSpot,
+	BinancePerp(Client),
+	BinanceSpot(Client),
 	BinanceMargin,
 	BybitPerp,
 	BybitSpot,

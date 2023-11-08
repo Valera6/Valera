@@ -1,12 +1,6 @@
-use crate::requests::*;
-use crate::types::*;
 use anyhow::{anyhow, Result};
-use dashmap::DashMap;
-use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use tokio::task::spawn;
-
-use crate::requests::types::*;
 
 async fn naked_request(url: &str, payload: Vec<HashMap<&str, &str>>, rate_limit: RateLimit) -> Result<HashMap<String, Vec<serde_json::Value>>> {
 	async fn perform_requests(client: reqwest::Client, url: String, symbols: Vec<String>, params: HashMap<String, String>) -> Result<HashMap<String, Vec<serde_json::Value>>> {
