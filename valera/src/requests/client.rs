@@ -7,10 +7,16 @@ use std::sync::Mutex;
 
 #[derive(Debug)]
 pub struct Client {
+	//TODO!!: attach proxies and func for using them
 	api_key: String,
 	rate_limit: Mutex<RateLimit>,
 }
 impl Client {
+	pub fn new(owner: &Provider, api_key: String) -> Self {
+		let rate_limit = RateLimit::build(Provider.rate_limit, Provider.calc_used);
+		let api_key = std::env::var("BINANCE_KEY_API_KEY").unwrap();
+		return Client{ api_key, rate_limit };
+	}
 	pub async fn request(&self, url: String, params: &HashMap<&str, &str>) -> Result<reqwest::Response> {
 		let mut headers = reqwest::header::HeaderMap::new();
 		headers.insert("X-MBX-APIKEY", self.api_key.parse().unwrap()); // not sure why not just `.as_str()`

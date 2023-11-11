@@ -63,12 +63,6 @@ async fn naked_request(url: &str, payload: Vec<HashMap<&str, &str>>, rate_limit:
 	let future = perform_requests(client, u, s, p);
 	future.await
 }
-//? do I want this
-// async fn request(&self, url: &str, params: HashMap<&str, &str>) -> Result<Vec<serde_json::Value>> {
-// 	// This will be an individual case for the requests. Client-facing only, so don't need it now.
-// 	// Not gonna do it now to prevent introducing inconsistencies until all abstractions are fixed.
-// 	todo!();
-// }
 async fn r(url: &str) -> serde_json::Value {
 	reqwest::get(url)
 		.await

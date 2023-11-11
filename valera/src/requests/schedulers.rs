@@ -14,7 +14,7 @@ async fn load_trades_over_interval(provider: &Provider, params: TradesParams, cl
 	let id = params.id;
 
 	let base_url = market.get_base_url();
-	//todo make this also be determined by Market:
+	//TODO!: 
 	let api_key = std::env::var("BINANCE_KEY_API_KEY").unwrap();
 
 	let find_fromId = async {
