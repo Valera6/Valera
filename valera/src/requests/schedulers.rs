@@ -5,9 +5,9 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::requests::types::*;
+use crate::requests::{Client, TradesParams};
 
-async fn load_trades_over_interval(provider: &Provider, params: TradesParams, client: Arc<Client>, mut base_path: PathBuf) -> Result<()> {
+async fn load_trades_over_interval(provider_ref: &Provider, params: TradesParams, client: Arc<Client>, mut base_path: PathBuf) -> Result<()> {
 	let symbol = params.symbol;
 	let start_time = params.start_time;
 	let end_time = params.end_time;
@@ -16,6 +16,7 @@ async fn load_trades_over_interval(provider: &Provider, params: TradesParams, cl
 	let base_url = market.get_base_url();
 	//TODO!: 
 	let api_key = std::env::var("BINANCE_KEY_API_KEY").unwrap();
+	let client = Client::build(provider_ref, api_key);
 
 	let find_fromId = async {
 		let url = format!("{}/aggTrades?symbol={}&startTime={}&limit=1", &base_url, &symbol, &start_time.ms);

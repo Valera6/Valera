@@ -12,9 +12,8 @@ pub struct Client {
 	rate_limit: Mutex<RateLimit>,
 }
 impl Client {
-	pub fn new(owner: &Provider, api_key: String) -> Self {
+	pub fn build(owner: &Provider, api_key: String) -> Self {
 		let rate_limit = RateLimit::build(Provider.rate_limit, Provider.calc_used);
-		let api_key = std::env::var("BINANCE_KEY_API_KEY").unwrap();
 		return Client{ api_key, rate_limit };
 	}
 	pub async fn request(&self, url: String, params: &HashMap<&str, &str>) -> Result<reqwest::Response> {
@@ -38,7 +37,7 @@ impl Client {
 	}
 }
 
-pub struct RateLimit {
+struct RateLimit {
 	minute: String,
 	used: i32,
 	threshold: i32,
@@ -51,7 +50,7 @@ impl RateLimit {
 		let used = 0;
 		RateLimit { minute, used, threshold, calc_used }
 	}
-	pub fn now_minute() -> String {
+	fn now_minute() -> String {
 		Utc::now().format("%Y-%m-%d %H:%M").to_string()
 	}
 	pub async fn update(&mut self, r: &Response) {
