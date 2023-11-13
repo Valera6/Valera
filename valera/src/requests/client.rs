@@ -5,6 +5,11 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::Mutex;
 
+pub struct Query {
+	id: String,
+	params: Vec<HashMap<String, String>>, // simply store all responses in one Vec, and just return `Vec<Response>, id` back
+}
+
 #[derive(Debug)]
 pub struct Client {
 	//TODO!!: attach proxies and func for using them
@@ -21,8 +26,9 @@ impl Client {
 		headers.insert("X-MBX-APIKEY", self.api_key.parse().unwrap()); // not sure why not just `.as_str()`
 		headers.insert("Content-Type", "application/x-www-form-urlencoded".parse().unwrap());
 
+		// Wrapping getting Mutex locks in scopes is to evade `Send` trait requirement check of any async call
 		{
-			let mut rate_limit = self.rate_limit.lock().unwrap();
+			let rate_limit = self.rate_limit.lock().unwrap();
 			rate_limit.sleep_if_needed();
 		}
 
