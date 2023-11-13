@@ -40,7 +40,7 @@ impl Client {
 struct RateLimit {
 	minute: String,
 	used: i32,
-	threshold: i32,
+	safe_threshold: i32,
 	calc_used: Box<dyn Fn(i32, &reqwest::Response) -> i32>,
 }
 
@@ -48,7 +48,8 @@ impl RateLimit {
 	pub fn build(threshold: i32, calc_used: Box<dyn Fn(i32, &reqwest::Response) -> i32>) -> Self {
 		let minute = Self::now_minute();
 		let used = 0;
-		RateLimit { minute, used, threshold, calc_used }
+		let safe_threshold = (threshold as f32 * 0.9) as i32;
+		RateLimit { minute, used, safe_threshold, calc_used }
 	}
 	fn now_minute() -> String {
 		Utc::now().format("%Y-%m-%d %H:%M").to_string()
@@ -66,7 +67,7 @@ impl RateLimit {
 		eprintln!("#From RateLimit# Used: {}", self.used);
 	}
 	pub fn sleep_if_needed(&self) {
-		if self.used > (self.threshold as f32 * 0.9) as i32 {
+		if self.used > self.safe_threshold {
 			let stored_minute = NaiveDateTime::parse_from_str(&self.minute, "%Y-%m-%d %H:%M").expect("failed to parse the provided minute string of RateLimit");
 			let next_minute = stored_minute + chrono::Duration::minutes(1);
 			let current_time = Utc::now().naive_utc();
@@ -84,9 +85,9 @@ impl RateLimit {
 impl fmt::Debug for RateLimit {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		f.debug_struct("RateLimit")
-			.field("minute", &self.minute.lock().unwrap())
-			.field("used", &self.used.load(std::sync::atomic::Ordering::SeqCst))
-			.field("threshold", &self.threshold)
+			.field("minute", &self.minute)
+			.field("used", &self.used)
+			.field("threshold", &self.safe_threshold)
 			.finish()
 	}
 }
