@@ -58,6 +58,7 @@ impl Provider {
 }
 
 //=============================================================================
+// everything what's left in here is actually query-specific, and needs to be transfered to be provided on their creation
 impl Providers {
 	pub fn trades_entry_into_row(&self, entry: &serde_json::Value) -> DataFrame {
 		df!(
