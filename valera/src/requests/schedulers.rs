@@ -14,8 +14,7 @@ async fn load_trades_over_interval(provider_ref: &Provider, params: TradesParams
 	let id = params.id;
 
 	let base_url = market.get_base_url();
-	//TODO!: 
-	let api_key = std::env::var("BINANCE_KEY_API_KEY").unwrap();
+	let api_key = Some(std::env::var("BINANCE_MAIN_KEY").unwrap());
 	let client = Client::build(provider_ref, api_key);
 
 	let find_fromId = async {
@@ -36,7 +35,7 @@ async fn load_trades_over_interval(provider_ref: &Provider, params: TradesParams
 	let mut buffer_df = DataFrame::default();
 	while last_reached_ms < end_time.ms {
 		// In the perfect world check the code, and never print out the same error code twice.
-		r = match client::request(ulr, params)?.await() {
+		let r = match client::request(url, params)?.await() {
 			Error(e) => eprintln!("Request errored: {}", e),
 			Result(response) => response,
 		};
@@ -57,7 +56,7 @@ async fn load_trades_over_interval(provider_ref: &Provider, params: TradesParams
 		params.insert("fromId", Box::leak(new_fromId.clone().into_boxed_str()));
 	}
 
-	//todo figure out how to gradually unload with sink_parquet
+	//TODO: figure out how to gradually unload with sink_parquet
 	base_path.push(id + ".parquet");
 	buffer_df.lazy().sink_parquet(base_path, ParquetWriteOptions::default()).unwrap();
 	Ok(())
@@ -65,9 +64,6 @@ async fn load_trades_over_interval(provider_ref: &Provider, params: TradesParams
 
 /// Function that schedules the `get_trades()` in batches of 30. Later will be upgraded to be unlimited, taking advantage of streaming directly into the according files on every yield, but that I haven't figured out yet.
 pub async fn collect_trades(mut payloads: Vec<TradesParams>, client: Arc<Client>) {
-	// the following will be done for each proxy thread of the carousel:
-
-	//TODO!!!: move to the provider
 	let calc_used = |current_used: i32, r: &reqwest::Response| -> i32 {
 		let header_value = r.headers().get("x-mbx-used-weight-1m").unwrap();
 		match header_value.to_str() {

@@ -32,7 +32,6 @@
 	clippy::verbose_file_reads,
 	clippy::unnested_or_patterns,
 	clippy::str_to_string,
-	rust_2018_idioms,
 	future_incompatible,
 	nonstandard_style,
 	missing_debug_implementations
@@ -51,6 +50,5 @@ pub mod prelude;
 pub mod backtest;
 pub mod data_science;
 pub mod display;
-pub mod exchanges;
 pub mod requests;
 pub mod types;

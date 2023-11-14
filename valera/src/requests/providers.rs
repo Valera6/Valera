@@ -1,37 +1,64 @@
-use crate::requests::client::Client;
-use crate::types::klines;
+use crate::requests::{Client, ClientSpecific};
+use crate::types::*;
 use polars::prelude::{df, DataFrame, NamedFrom};
 
-#[derive(Debug, Default, Clone)]
-pub enum Providers {
-	#[default]
-	None,
-	BinancePerp(Client),
-	BinanceSpot(Client),
-	BinanceMargin,
-	BybitPerp,
-	BybitSpot,
-	Coinmarketcap,
-	Coingecko,
+pub enum Templates{
+	BinancePerp,
+	BinanceSpot,
+	SomethingElseSayCoinmarketcap,
+}
+impl Templates {
+	pub fn build(&self) -> Provider {
+		match self {
+			Self::BinancePerp => Provider::build(
+				vec![
+					ClientSpecific{ api_key: Some(std::env::var("BINANCE_MAIN_KEY").unwrap()), proxy: None },
+				],
+				1500,
+				Some("https://fapi.binance.com/fapi/v1"),
+				Box::new(|current_used: i32, r: &reqwest::Response| -> i32 {
+					let header_value = r.headers().get("x-mbx-used-weight-1m").unwrap();
+					match header_value.to_str() {
+						Ok(used_str) => used_str.parse::<i32>().unwrap_or(current_used),
+						Err(_) => {
+							eprintln!("Error: failed to extract new used from reqwest::Response");
+							current_used
+						}
+					}
+				})
+			),
+			//Self::BinanceSpot => Provider::build(), // rate limit here is 6000, btw
+			_ => panic!("Not implemented yet"),
+		}
+	}
 }
 
+pub struct Provider {	
+	base_url: String,
+	clients: Vec<Client>,
+}
+impl Provider {
+	pub fn default() -> Self {
+		todo!()
+	}
+	pub fn build<F>(clients: Vec<ClientSpecific>, rate_limit: i32, base_url: Option<&str>, calc_used: Box<F>) -> Self
+	where
+		F: Fn(i32, &reqwest::Response) -> i32 + Clone,
+	{
+		let base_url = match base_url {
+			Some(s) => s.to_owned(),
+			None => "".to_owned(),
+		};
+		let clients: Vec<Client> = clients.iter().map(|&client_specific| Client::build(client_specific, rate_limit, calc_used.clone())).collect();
+		Provider{
+			clients,
+			base_url,
+		}	
+	}
+}
+
+//=============================================================================
 impl Providers {
-	pub fn get_name(&self) -> &'static str {
-		match self {
-			Providers::BinancePerp => "binance-perp",
-			Providers::BinanceSpot => "binance-spot",
-			Providers::None => panic!("The Market is None"),
-			_ => todo!(),
-		}
-	}
-	pub fn get_base_url(&self) -> &'static str {
-		match self {
-			Providers::BinancePerp => "https://fapi.binance.com/fapi/v1",
-			Providers::BinanceSpot => "https://api.binance.com/api/v3",
-			Providers::None => panic!("The Market is None"),
-			_ => todo!(),
-		}
-	}
 	pub fn trades_entry_into_row(&self, entry: &serde_json::Value) -> DataFrame {
 		df!(
 			"time_ms" => vec![entry.get("time").unwrap().as_i64().unwrap()],
@@ -83,20 +110,5 @@ impl Providers {
 			}
 			_ => panic!("Conversion to klines for this Market is not supported yet"),
 		}
-	}
-}
-
-impl From<&str> for Providers {
-	fn from(s: &str) -> Self {
-		match s {
-			"binance-perp" => Providers::BinancePerp,
-			"binance-spot" => Providers::BinanceSpot,
-			_ => panic!("Can't convert provided string to Market.\nHave: {s}\nWant: exchange-market; e.g., binance-perp"),
-		}
-	}
-}
-impl From<String> for Providers {
-	fn from(s: String) -> Self {
-		Self::from(s.as_str())
 	}
 }
