@@ -9,8 +9,9 @@ use valera::types::*;
 
 #[tokio::main]
 async fn main() {
-	let payloads = requests::db_infrastructure::build_payloads("main-trades-log");
-	requests::schedulers::collect_trades(payloads, Providers::BinancePerp).await; //will overwrite existing load in the corresponding `ongoing_collection/` dir
+	let tuple = requests::db_infrastructure::build_payloads("main-trades-log");
+	// not sure I can do this in async context. Let's just unpack the tuple manually for now.
+	requests::api::collect_trades(tuple.0, tuple.1, tuple.2, tuple.3).await;
 
 	// 2) pull norm volumes against weighted last 4-1m.
 
@@ -34,7 +35,7 @@ mod types {
 	// 	assert_eq!(k.tf.as_str(), "5m");
 	// }
 	async fn test_plotly_klines() {
-		let closes_df = requests::schedulers::get_closes_df().await;
+		let closes_df = requests::api::get_closes_df().await;
 		plotly_closes(closes_df);
 	}
 	fn test_build_payloads() {

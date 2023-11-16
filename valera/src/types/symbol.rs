@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+/// So functions can say they just want any symbol. Could use enum, but community suggested following logic: `likely to add more structs ? use trait : likely to implement more functionality on each ? use enum`
 pub trait Symbol {
 	fn inner(&self) -> &str;
 	fn as_str(&self) -> &str {

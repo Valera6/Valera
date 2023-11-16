@@ -2,19 +2,24 @@ use crate::requests::{Client, ClientSpecific};
 use crate::types::*;
 use polars::prelude::{df, DataFrame, NamedFrom};
 
-pub enum Templates{
+pub enum Templates {
+	//TODO!: add the rest of the binance providers.
 	BinancePerp,
 	BinanceSpot,
+	BinanceMargin,
+	BinanceData,
+	BinanceWebsocket, //?
 	SomethingElseSayCoinmarketcap,
 }
 impl Templates {
 	pub fn build(&self) -> Provider {
 		match self {
 			Self::BinancePerp => Provider::build(
-				vec![
-					ClientSpecific{ api_key: Some(std::env::var("BINANCE_MAIN_KEY").unwrap()), proxy: None },
-				],
-				1500,
+				vec![ClientSpecific {
+					api_key: Some(std::env::var("BINANCE_MAIN_KEY").unwrap()),
+					proxy: None,
+				}],
+				2400, // and 1200 for orders
 				Some("https://fapi.binance.com/fapi/v1"),
 				Box::new(|current_used: i32, r: &reqwest::Response| -> i32 {
 					let header_value = r.headers().get("x-mbx-used-weight-1m").unwrap();
@@ -25,23 +30,25 @@ impl Templates {
 							current_used
 						}
 					}
-				})
+				}),
+				"BinancePerp", // There has to be a way to automate it! GPT suggests `use strum::ToString; and then .to_string() on the member of the enum`, but it doesn't work
 			),
-			//Self::BinanceSpot => Provider::build(), // rate limit here is 6000, btw
+			//Self::BinanceSpot => Provider::build(), // but want to have `rate_limit`=6000 and different `base_url`
 			_ => panic!("Not implemented yet"),
 		}
 	}
 }
 
-pub struct Provider {	
-	base_url: String,
+pub struct Provider {
 	clients: Vec<Client>,
+	base_url: String,
+	name: String,
 }
 impl Provider {
 	pub fn default() -> Self {
 		todo!()
 	}
-	pub fn build<F>(clients: Vec<ClientSpecific>, rate_limit: i32, base_url: Option<&str>, calc_used: Box<F>) -> Self
+	pub fn build<F>(clients: Vec<ClientSpecific>, rate_limit: i32, base_url: Option<&str>, calc_used: Box<F>, name) -> Self
 	where
 		F: Fn(i32, &reqwest::Response) -> i32 + Clone,
 	{
@@ -50,10 +57,7 @@ impl Provider {
 			None => "".to_owned(),
 		};
 		let clients: Vec<Client> = clients.iter().map(|&client_specific| Client::build(client_specific, rate_limit, calc_used.clone())).collect();
-		Provider{
-			clients,
-			base_url,
-		}	
+		Provider { clients, base_url, name }
 	}
 }
 

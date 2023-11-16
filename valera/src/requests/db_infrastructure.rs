@@ -4,7 +4,7 @@ use polars::prelude::{ParquetReader, SerReader};
 
 pub fn build_payloads(name: &str) -> Vec<TradesPayload> {
 	// I'm going to try to make this be a gRPC call.
-	// Hence, an always online server repulling the trades from discord every 15m, storing, then sharing on request.
+	// Hence, an always online server repulling the trade),s from discord every 15m, storing, then sharing on request.
 	//-- for now just loading the file, until my api is up
 
 	let filename = [name, ".parquet"].concat();
@@ -12,7 +12,7 @@ pub fn build_payloads(name: &str) -> Vec<TradesPayload> {
 	let df = ParquetReader::new(_file).finish().unwrap();
 	dbg!(&df);
 
-	let mut payloads: Vec<TradesPayload> = Vec::new();
+	let mut payloads: Vec<(symbol, start_time, end_time)> = Vec::new();
 	let n_rows = df.height();
 	for i in 0..n_rows {
 		let row = df.get_row(i).unwrap();
@@ -28,5 +28,6 @@ pub fn build_payloads(name: &str) -> Vec<TradesPayload> {
 		let payload = TradesPayload::build(symbol, start_time, end_time, id);
 		payloads.push(payload);
 	}
+	//TODO!!!!!!!!!!!: should return tuple of 4 elements
 	payloads
 }

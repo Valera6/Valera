@@ -1,3 +1,4 @@
+use crate::types::Timestamp;
 #[derive(Debug, Clone)]
 pub struct TradesParams {
 	pub symbol: String,

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::requests::{Client, TradesParams};
+use crate::requests::Provider;
 
 async fn load_trades_over_interval(provider_ref: &Provider, params: TradesParams, client: Arc<Client>, mut base_path: PathBuf) -> Result<()> {
 	let symbol = params.symbol;
@@ -62,29 +62,24 @@ async fn load_trades_over_interval(provider_ref: &Provider, params: TradesParams
 	Ok(())
 }
 
-/// Function that schedules the `get_trades()` in batches of 30. Later will be upgraded to be unlimited, taking advantage of streaming directly into the according files on every yield, but that I haven't figured out yet.
-pub async fn collect_trades(mut payloads: Vec<TradesParams>, client: Arc<Client>) {
-	let calc_used = |current_used: i32, r: &reqwest::Response| -> i32 {
-		let header_value = r.headers().get("x-mbx-used-weight-1m").unwrap();
-		match header_value.to_str() {
-			Ok(used_str) => used_str.parse::<i32>().unwrap_or(current_used),
-			Err(_) => {
-				eprintln!("Error: failed to extract new used from reqwest::Response");
-				current_used
-			}
-		}
-	};
-	exchange.rate_limits.insert("normal".to_owned(), RateLimit::build(5500, calc_used));
+// Will this work even?
+pub enum Symbols{
+	CoinAsString(String),
+	CoinsAsStrings(Vec<String>),
+	CoinAsSymbol(Box<dyn Symbol>),
+	CoinsAsSymbols(Vec<Box<dyn Symbol>>),
+}
 
-	use std::fs;
+///_args_: `end_url` will be appended to the `base_url` of the provider, if any.
+//TODO!!!!!!!: append optional args with functions
+pub async fn collect_trades(provider: Provider, end_url: String, symbols: Symbols, start_time: Option<Timestamp>, end_time: Option<Timestamp>, params: Option<HashMap<String, String>>) {
 	let mut dump_path = PathBuf::from("ongoing_collection");
-	// note that this does not overwrite already existing directories by default
-	fs::create_dir_all(&dump_path).unwrap();
-	dump_path.push(market.name());
+	std::fs::create_dir_all(&dump_path).unwrap();
+	dump_path.push(market.name);
 	if dump_path.exists() {
-		fs::remove_dir_all(&dump_path).unwrap();
+		std::fs::remove_dir_all(&dump_path).unwrap();
 	}
-	fs::create_dir_all(&dump_path).unwrap();
+	std::fs::create_dir_all(&dump_path).unwrap();
 
 	let mut bar = valera_utils::ProgressBar::new(payloads.len());
 	let mut i = 1_usize;
@@ -110,12 +105,10 @@ pub async fn collect_trades(mut payloads: Vec<TradesParams>, client: Arc<Client>
 	valera_utils::tg();
 }
 
-//? should it be here or at say transformers.rs
 pub async fn get_closes_df() -> DataFrame {
 	let mut k = get_24hr(Providers::BinancePerp).await;
 
 	let mut closes_init: Vec<Series> = Vec::new();
-	// probably will add shared index later, for now without it.
 	for (_key, value) in k.iter_mut() {
 		value.normalize(None);
 		let mut closes_series = value.df.column("open").unwrap().clone();
@@ -127,7 +120,6 @@ pub async fn get_closes_df() -> DataFrame {
 
 pub async fn get_24hr(market: Providers) -> HashMap<String, Klines> {
 	let b = Binance::new().await;
-	//todo make be based on market
 	let url = "https://fapi.binance.com/fapi/v1/klines";
 	let symbols = b.get_perp();
 	// let symbols = vec!["BTCUSDT", "ETHUSDT", "ADAUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"]; //dbg
