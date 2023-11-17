@@ -1,4 +1,4 @@
-use crate::requests::{Client, ClientSpecific};
+use crate::requests::client::{Client, ClientSpecific};
 use crate::types::*;
 use polars::prelude::{df, DataFrame, NamedFrom};
 
@@ -31,7 +31,7 @@ impl Templates {
 						}
 					}
 				}),
-				"BinancePerp", // There has to be a way to automate it! GPT suggests `use strum::ToString; and then .to_string() on the member of the enum`, but it doesn't work
+				"BinancePerp".to_owned(), // There has to be a way to automate it! GPT suggests `use strum::ToString; and then .to_string() on the member of the enum`, but it doesn't work
 			),
 			//Self::BinanceSpot => Provider::build(), // but want to have `rate_limit`=6000 and different `base_url`
 			_ => panic!("Not implemented yet"),
@@ -48,7 +48,7 @@ impl Provider {
 	pub fn default() -> Self {
 		todo!()
 	}
-	pub fn build<F>(clients: Vec<ClientSpecific>, rate_limit: i32, base_url: Option<&str>, calc_used: Box<F>, name) -> Self
+	pub fn build<F>(clients: Vec<ClientSpecific>, rate_limit: i32, base_url: Option<&str>, calc_used: Box<F>, name: String) -> Self
 	where
 		F: Fn(i32, &reqwest::Response) -> i32 + Clone,
 	{
@@ -58,6 +58,9 @@ impl Provider {
 		};
 		let clients: Vec<Client> = clients.iter().map(|&client_specific| Client::build(client_specific, rate_limit, calc_used.clone())).collect();
 		Provider { clients, base_url, name }
+	}
+	pub fn name(&self) -> String {
+		self.name.clone()
 	}
 }
 

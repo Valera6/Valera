@@ -5,7 +5,7 @@ default-members = ["valera", "valera-*"]
 resolver = "2"
 
 [workspace.dependencies]
-polars = { version = "0.34.2", features = ["nightly", "parquet", "lazy", "polars-io", "serde", "serde-lazy", "json", "rows", "streaming"] } # , "performant", "cse" // cost compilation time.
+polars = { version = "0.35.2", features = ["nightly", "parquet", "lazy", "polars-io", "serde", "serde-lazy", "json", "rows", "streaming"] } # , "performant", "cse" // cost compilation time.
 chrono = "^0.4.31"
 reqwest = { version = "0.11.22", features = ["json", "socks", "blocking"] }
 tokio = { version = "1.33.0", features = ["full"] }
@@ -16,7 +16,17 @@ rodio = "0.17.3"
 anyhow = "1.0.75"
 plotly = { version = "0.8.4", features = ["kaleido"] }
 dashmap = "5.5.3"
+rand = "0.8.5"
 
 [profile.dev]
 opt-level = 0
 # incremental = false
+
+[lints.rust]
+unsafe_code = "allow"
+[lints.clippy]
+unused_variables = "allow"
+unused_imports = "allow"
+type_complexity = "allow"
+too_many_arguments = "allow"
+

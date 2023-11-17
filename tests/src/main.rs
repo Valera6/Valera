@@ -9,9 +9,13 @@ use valera::types::*;
 
 #[tokio::main]
 async fn main() {
-	let tuple = requests::db_infrastructure::build_payloads("main-trades-log");
-	// not sure I can do this in async context. Let's just unpack the tuple manually for now.
-	requests::api::collect_trades(tuple.0, tuple.1, tuple.2, tuple.3).await;
+	let payloads = requests::db_infrastructure::build_payloads("main-trades-log");
+	//dbg
+	let symbol = payloads[0].0;
+	let start_time = payloads[0].0;
+	let end_time = payloads[0].0;
+	let id = payloads[0].0;
+	requests::api::collect_trades(symbol, Some(start_time), Some(end_time), Some(id)).await;
 
 	// 2) pull norm volumes against weighted last 4-1m.
 

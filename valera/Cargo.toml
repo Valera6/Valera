@@ -20,3 +20,4 @@ polars = { workspace = true }
 anyhow = { workspace = true }
 plotly = { workspace = true }
 dashmap = { workspace = true }
+rand = { workspace = true }

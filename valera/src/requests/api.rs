@@ -1,3 +1,4 @@
+use rand::{distributions::Alphanumeric, Rng};
 use crate::types::*;
 use anyhow::Result;
 use polars::prelude::*;
@@ -7,15 +8,47 @@ use std::sync::Arc;
 
 use crate::requests::Provider;
 
-async fn load_trades_over_interval(provider_ref: &Provider, params: TradesParams, client: Arc<Client>, mut base_path: PathBuf) -> Result<()> {
+#[derive(Default)]
+pub struct Args{
+	start_time: Option<Timestamp>,
+	end_time: Option<Timestamp>,
+	params: Option<HashMap<String, String>>,
+	id: Option<String>,
+}
+impl Args {
+	pub fn new() -> Self {
+		Args::default()
+	}
+	pub fn start_time(mut self, start_time: Timestamp) -> Self {
+		self.start_time = Some(start_time);
+		self
+	}
+	pub fn end_time(mut self, end_time: Timestamp) -> Self {
+		self.end_time = Some(end_time);
+		self
+	}
+	pub fn params(mut self, params: HashMap<String, String>) -> Self {
+		self.params = Some(params);
+		self
+	}
+	pub fn id(mut self, id: String) -> Self {
+		self.id = Some(id);
+		self
+	}
+	pub async fn collect_and_dump_trades(&self, provider: &Provider, end_url: String, symbols: Symbols) {
+		collect_and_dump_trades(provider, end_url, symbols, self.start_time.clone(), self.end_time.clone(), self.params.clone(), self.id.clone()).await;
+	}
+}
+
+async fn load_trades_over_interval(provider_ref: &Provider, params: HashMap<String, String>, mut base_path: PathBuf) -> Result<()> {
 	let symbol = params.symbol;
 	let start_time = params.start_time;
 	let end_time = params.end_time;
 	let id = params.id;
 
-	let base_url = market.get_base_url();
-	let api_key = Some(std::env::var("BINANCE_MAIN_KEY").unwrap());
-	let client = Client::build(provider_ref, api_key);
+	//let base_url = market.get_base_url();
+	//let api_key = Some(std::env::var("BINANCE_MAIN_KEY").unwrap());
+	//let client = Client::build(provider_ref, api_key);
 
 	let find_fromId = async {
 		let url = format!("{}/aggTrades?symbol={}&startTime={}&limit=1", &base_url, &symbol, &start_time.ms);
@@ -62,26 +95,34 @@ async fn load_trades_over_interval(provider_ref: &Provider, params: TradesParams
 	Ok(())
 }
 
-// Will this work even?
-pub enum Symbols{
-	CoinAsString(String),
-	CoinsAsStrings(Vec<String>),
-	CoinAsSymbol(Box<dyn Symbol>),
-	CoinsAsSymbols(Vec<Box<dyn Symbol>>),
+fn generate_random_id() -> String {
+    let random_part: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(16)
+        .map(char::from)
+        .collect();
+
+    format!("GENERATED_{}", random_part)
 }
 
 ///_args_: `end_url` will be appended to the `base_url` of the provider, if any.
 //TODO!!!!!!!: append optional args with functions
-pub async fn collect_trades(provider: Provider, end_url: String, symbols: Symbols, start_time: Option<Timestamp>, end_time: Option<Timestamp>, params: Option<HashMap<String, String>>) {
+pub async fn collect_and_dump_trades(provider: &Provider, end_url: String, symbols: Symbols, start_time: Option<Timestamp>, end_time: Option<Timestamp>, params: Option<HashMap<String, String>>, id: Option<String>) {
+	let query_id: String = match id {
+		Some(provided) => provided,
+		None => generate_random_id(),
+	};
+	let symbols = symbols.as_strings();
+
 	let mut dump_path = PathBuf::from("ongoing_collection");
 	std::fs::create_dir_all(&dump_path).unwrap();
-	dump_path.push(market.name);
+	dump_path.push(provider.name());
 	if dump_path.exists() {
 		std::fs::remove_dir_all(&dump_path).unwrap();
 	}
 	std::fs::create_dir_all(&dump_path).unwrap();
 
-	let mut bar = valera_utils::ProgressBar::new(payloads.len());
+	//let mut bar = valera_utils::ProgressBar::new(payloads.len());
 	let mut i = 1_usize;
 	while !payloads.is_empty() {
 		let mut handles = Vec::new();
@@ -89,7 +130,7 @@ pub async fn collect_trades(provider: Provider, end_url: String, symbols: Symbol
 			let to_pass_payload = payloads.pop().unwrap();
 			let to_pass_market = market.clone();
 			let to_pass_path = dump_path.clone();
-			let to_pass_exchange = exchange.clone(); // clones only the Arc reference, all still point to one thing
+			let to_pass_exchange = exchange.clone();
 			let handle = tokio::task::spawn(async move {
 				load_trades_over_interval(to_pass_exchange, to_pass_payload, to_pass_market, to_pass_path).await.unwrap();
 			});
@@ -99,7 +140,7 @@ pub async fn collect_trades(provider: Provider, end_url: String, symbols: Symbol
 		for handle in handles {
 			let _res = handle.await;
 		}
-		bar.progress(i);
+		//bar.progress(i);
 	}
 	eprintln!("  DONE  ");
 	valera_utils::tg();

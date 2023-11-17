@@ -1,10 +1,28 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+/// Used by most requests::api endpoints
+///_NB_: in the `.as_strings()` we don't check for validity of provided strings
+pub enum Symbols{
+	CoinAsString(String),
+	CoinsAsStrings(Vec<String>),
+	CoinAsSymbol(Box<dyn Symbol>),
+	CoinsAsSymbols(Vec<Box<dyn Symbol>>),
+}
+impl Symbols {
+	pub fn as_strings(&self) -> Vec<String> {
+		match self {
+			Self::CoinAsString(s) => vec![s.clone()],
+			Self::CoinsAsStrings(v) => v.clone(),
+			Self::CoinAsSymbol(s)=> vec![s.inner()],
+			Self::CoinsAsSymbols(v) => v.iter().map(|s| s.inner()).collect(),
+		}
+	}
+}
+
 /// So functions can say they just want any symbol. Could use enum, but community suggested following logic: `likely to add more structs ? use trait : likely to implement more functionality on each ? use enum`
 pub trait Symbol {
-	fn inner(&self) -> &str;
-	fn as_str(&self) -> &str {
+	fn inner(&self) -> String {
 		self.inner()
 	}
 }
@@ -12,8 +30,8 @@ pub trait Symbol {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UsdtSymbol(pub String);
 impl Symbol for UsdtSymbol {
-	fn inner(&self) -> &str {
-		&self.0
+	fn inner(&self) -> String {
+		self.0.clone()
 	}
 }
 impl fmt::Debug for UsdtSymbol {
@@ -25,8 +43,8 @@ impl fmt::Debug for UsdtSymbol {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct CoinmSymbol(pub String);
 impl Symbol for CoinmSymbol {
-	fn inner(&self) -> &str {
-		&self.0
+	fn inner(&self) -> String {
+		self.0.clone()
 	}
 }
 impl fmt::Debug for CoinmSymbol {
