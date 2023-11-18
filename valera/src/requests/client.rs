@@ -1,4 +1,5 @@
 use crate::requests::Provider;
+use crate::types::*;
 use anyhow::{self, Result};
 use chrono::{NaiveDateTime, Utc};
 use reqwest::Response;
@@ -7,7 +8,7 @@ use std::fmt;
 use std::sync::Mutex;
 
 /// Schedulers put the split parts on the grid, to later reconstruct.
-pub struct Id {
+pub struct QueryGridId {
 	/// 8 characters to encode the semantic query, the one that was submitted by the user.
 	initial: String,
 	/// if several coins, we count them while splitting, and putting here.
@@ -15,10 +16,29 @@ pub struct Id {
 	/// if long request, we split it, while counting n splits
 	vertical: u32,
 }
+impl QueryGridId {
+	pub fn build(initial: String, horizontal: u32, vertical: u32) -> Self {
+		QueryGridId { initial, horizontal, vertical }
+	}
+}
 pub struct Query {
-	id: Id,
-	params: Vec<HashMap<String, String>>,
-	request_weight: i32,
+	id: QueryGridId,
+	/// includes symbol, and literally all the other params
+	start_time: Option<Timestamp>,
+	end_time: Option<Timestamp>,
+	other_params: HashMap<String, String>,
+	request_weight: u32,
+}
+impl Query {
+	pub fn build(id: QueryGridId, start_time: Option<Timestamp>, end_time: Option<Timestamp>, other_params: HashMap<String, String>, request_weight: u32) -> Self {
+		Query {
+			id,
+			start_time,
+			end_time,
+			other_params,
+			request_weight,
+		}
+	}
 }
 
 #[derive(Debug)]

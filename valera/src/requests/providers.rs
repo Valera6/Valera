@@ -1,4 +1,4 @@
-use crate::requests::client::{Client, ClientSpecific};
+use crate::requests::client::{Client, ClientSpecific, Query};
 use crate::types::*;
 use polars::prelude::{df, DataFrame, NamedFrom};
 
@@ -61,6 +61,9 @@ impl Provider {
 	}
 	pub fn name(&self) -> String {
 		self.name.clone()
+	}
+	pub fn submit(&self, query: Query) -> DataFrame {
+		todo!()
 	}
 }
 

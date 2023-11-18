@@ -1,10 +1,10 @@
 use crate::types::*;
 use polars::prelude::{ParquetReader, SerReader};
 
-pub fn build_payloads(name: &str) -> Vec<(Box<dyn Symbol>, Timestamp, Timestamp, String)> {	
+pub fn build_payloads(name: &str) -> Vec<(Box<dyn Symbol>, Timestamp, Timestamp, String)> {
 	//TODO!: make into gRPC call
 
-	let filename = [name, ".parquet"].concat();
+	let filename = ["./_/", name, ".parquet"].concat();
 	let _file = std::fs::File::open(filename.as_str()).unwrap();
 	let df = ParquetReader::new(_file).finish().unwrap();
 
