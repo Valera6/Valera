@@ -52,7 +52,7 @@ impl<T> SubQuery<T> {
 	) -> Self {
 		SubQuery {
 			url,
-			parent: parent.0,
+			parent,
 			logic,
 			grid_pos,
 			start_time,
@@ -105,6 +105,6 @@ impl<T> SubQuery<T> {
 		//		}
 		//		params.insert("fromId", Box::leak(new_fromId.clone().into_boxed_str()));
 		//	}
-		self.parent.append_query(buffer_df);
+		self.parent.append_result(buffer_df);
 	}
 }
