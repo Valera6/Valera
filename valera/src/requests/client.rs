@@ -1,45 +1,16 @@
-use crate::requests::Provider;
-use crate::types::*;
 use anyhow::{self, Result};
 use chrono::{NaiveDateTime, Utc};
 use reqwest::Response;
+use serde::Serialize;
+#[cfg(feature = "json")]
+use serde_json;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::Mutex;
 
-/// Schedulers put the split parts on the grid, to later reconstruct.
-pub struct QueryGridId {
-	/// 8 characters to encode the semantic query, the one that was submitted by the user.
-	initial: String,
-	/// if several coins, we count them while splitting, and putting here.
-	horizontal: u32,
-	/// if long request, we split it, while counting n splits
-	vertical: u32,
-}
-impl QueryGridId {
-	pub fn build(initial: String, horizontal: u32, vertical: u32) -> Self {
-		QueryGridId { initial, horizontal, vertical }
-	}
-}
-pub struct Query {
-	id: QueryGridId,
-	/// includes symbol, and literally all the other params
-	start_time: Option<Timestamp>,
-	end_time: Option<Timestamp>,
-	other_params: HashMap<String, String>,
-	request_weight: u32,
-}
-impl Query {
-	pub fn build(id: QueryGridId, start_time: Option<Timestamp>, end_time: Option<Timestamp>, other_params: HashMap<String, String>, request_weight: u32) -> Self {
-		Query {
-			id,
-			start_time,
-			end_time,
-			other_params,
-			request_weight,
-		}
-	}
-}
+use crate::requests::providers::*;
+use crate::requests::query::*;
+use crate::types::*;
 
 #[derive(Debug)]
 pub struct ClientSpecific {
@@ -60,7 +31,7 @@ impl Client {
 	}
 	//TODO!!!: assigning/stealing
 	//pub fn assign(
-	pub async fn request(&self, url: String, params: &HashMap<&str, &str>) -> Result<reqwest::Response> {
+	pub async fn request<T: Serialize + ?Sized>(&self, url: String, params: &T) -> Result<reqwest::Response> {
 		let mut headers = reqwest::header::HeaderMap::new();
 		if let Some(key) = &self.api_key {
 			headers.insert("X-MBX-APIKEY", key.parse().unwrap());
@@ -75,7 +46,7 @@ impl Client {
 
 		//TODO!!!: handle errors
 		let r = match &self.proxy {
-			None => reqwest::Client::new().get(url.as_str()).query(&params).headers(headers).send().await.unwrap(),
+			None => reqwest::Client::new().get(url.as_str()).query(params).headers(headers).send().await.unwrap(),
 			Some(proxy) => {
 				todo!()
 			}
@@ -87,6 +58,10 @@ impl Client {
 		}
 
 		Ok(r)
+	}
+	pub async fn assign_sub_query<T>(&self, sub_query: SubQuery<T>) {
+		//TODO!: store sub_query on the client itself. And when the time is ripe, have the client's general runtime attend to it.
+		todo!();
 	}
 }
 

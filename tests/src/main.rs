@@ -15,6 +15,13 @@ async fn main() {
 	let start_time = payloads[0].0;
 	let end_time = payloads[0].0;
 	let id = payloads[0].0;
+
+	// if we want to persist Id for a specific query, have to do it here.
+	//let query_id: String = match id {
+	//	Some(provided) => provided,
+	//	None => rand::thread_rng().sample_iter(&Alphanumeric).take(16).map(char::from).collect(),
+	//};
+
 	requests::api::collect_trades(symbol, Some(start_time), Some(end_time), Some(id)).await;
 
 	// 2) pull norm volumes against weighted last 4-1m.

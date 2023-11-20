@@ -1,6 +1,13 @@
-use crate::requests::client::{Client, ClientSpecific, Query};
-use crate::types::*;
+use anyhow::Result;
+use polars::prelude::*;
 use polars::prelude::{df, DataFrame, NamedFrom};
+use rand::{distributions::Alphanumeric, Rng};
+use std::collections::HashMap;
+use std::path::PathBuf;
+
+use crate::requests::client::*;
+use crate::requests::query::*;
+use crate::types::*;
 
 pub enum Templates {
 	//TODO!: add the rest of the binance providers.
@@ -62,8 +69,47 @@ impl Provider {
 	pub fn name(&self) -> String {
 		self.name.clone()
 	}
-	pub fn submit(&self, query: Query) -> DataFrame {
-		todo!()
+	/// Simply concatenates base_url and end_url.
+	/// If during the creation of `Provider` `base_url` wasn't provided, just provide full url as end_url here.
+	pub fn url(&self, end_url: String) -> String {
+		format!("{}{}", self.base_url.clone(), end_url)
+	}
+	pub async fn submit<T>(&self, query: SubQuery<T>) {
+		//TODO!!: do checking of the busyness of clients and its implementation on client's side
+		self.clients[0].assign(query).await?
+	}
+	/// One of the API endpoints. And as such some things that are optional for the `SubQuery`, are required here.
+	pub async fn collect_and_dump_trades(&self, end_url: String, symbols: Symbols, start_time: Timestamp, end_time: Timestamp, params: Option<HashMap<String, String>>, entry_id: String) {
+		// // init params for the request
+		let symbols = symbols.as_strings();
+		let grid_pos = QueryGridPos { x: 0, y: 0 };
+		let url = self.url(end_url);
+
+		let symbol = symbols[0].clone(); //dbg
+		let mut other_params = HashMap::new();
+		other_params.insert("symbol".to_owned(), symbol); //dbg
+		other_params.insert("limit".to_owned(), 1000.to_string()); //dbg
+
+		let logic = || println!("Implement this later. For now simplest thing to get the infrastructure working");
+
+		let query = SubQuery::<DataFrame>::build(url, self, logic, grid_pos, Some(start_time), Some(end_time), other_params, 20);
+		//
+
+		// // Create dir to be dumping into. For now it doesn't have to be before the submition of the queries, but later this might be important for dynamic unloading with polar's `parquet_sync`.
+		let mut dump_path = PathBuf::from("/tmp/ongoing_collection");
+		std::fs::create_dir_all(&dump_path).unwrap();
+		dump_path.push(self.name());
+		if dump_path.exists() {
+			std::fs::remove_dir_all(&dump_path).unwrap();
+		}
+		std::fs::create_dir_all(&dump_path).unwrap();
+		//
+
+		// later will be `Vec<DataFrame>`
+		//BUG: not how this works.
+		let df: DataFrame = self.submit(query);
+		dump_path.push(entry_id + ".parquet");
+		df.lazy().sink_parquet(dump_path, ParquetWriteOptions::default()).unwrap();
 	}
 }
 

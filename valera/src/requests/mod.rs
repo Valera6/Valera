@@ -3,6 +3,7 @@ pub mod client;
 pub mod core;
 pub mod db_infrastructure;
 pub mod providers;
+pub mod query;
 
 pub use api::*;
 pub use db_infrastructure::*;

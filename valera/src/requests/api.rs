@@ -1,13 +1,11 @@
 use crate::types::*;
 use anyhow::Result;
 use polars::prelude::*;
-use rand::{distributions::Alphanumeric, Rng};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::requests::Provider;
-use crate::requests::client::{Query, QueryGridId};
+use crate::requests::client::{SubQuery, QueryGridId};
 
 #[derive(Default)]
 pub struct Args {
@@ -84,48 +82,7 @@ impl Args {
 //
 //}
 
-fn generate_random_id() -> String {
-	let random_part: String = rand::thread_rng().sample_iter(&Alphanumeric).take(16).map(char::from).collect();
-	format!("GENERATED_{}", random_part)
-}
-
 ///_args_: `end_url` will be appended to the `base_url` of the provider, if any.
-pub async fn collect_and_dump_trades(
-	provider: &Provider,
-	end_url: String,
-	symbols: Symbols,
-	start_time: Option<Timestamp>,
-	end_time: Option<Timestamp>,
-	params: Option<HashMap<String, String>>,
-	id: Option<String>,
-) {
-	let query_id: String = match id {
-		Some(provided) => provided,
-		None => generate_random_id(),
-	};
-	let symbols = symbols.as_strings();
-
-	let mut dump_path = PathBuf::from("/tmp/ongoing_collection");
-	std::fs::create_dir_all(&dump_path).unwrap();
-	dump_path.push(provider.name());
-	if dump_path.exists() {
-		std::fs::remove_dir_all(&dump_path).unwrap();
-	}
-	std::fs::create_dir_all(&dump_path).unwrap();
-
-	let grid_id = QueryGridId::build(query_id.clone(), 0, 0); 
-	let mut other_params = HashMap::new();
-	let symbol = symbols[0].clone(); //dbg
-	other_params.insert("symbol".to_owned(), symbol); //dbg
-	other_params.insert("limit".to_owned(), 1000.to_string()); //dbg
-	let query = Query::build(grid_id, start_time, end_time, other_params, 20);
-	// later will be `Vec<DataFrame>`
-	let df: DataFrame = provider.submit(query);
-	dump_path.push(query_id + ".parquet");
-	df.lazy().sink_parquet(dump_path, ParquetWriteOptions::default()).unwrap();
-
-	todo!();
-}
 
 //pub async fn get_closes_df() -> DataFrame {
 //	let mut k = get_24hr(Providers::BinancePerp).await;
