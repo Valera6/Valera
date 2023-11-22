@@ -24,6 +24,7 @@ opt-level = 0
 
 [lints.rust]
 unsafe_code = "allow"
+unused_imports = "allow"
 [lints.clippy]
 unused_variables = "allow"
 unused_imports = "allow"
