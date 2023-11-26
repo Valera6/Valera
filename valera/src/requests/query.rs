@@ -1,4 +1,4 @@
-use anyhow::Ruse anyhow::{Context, Result};esult;
+use anyhow::{Context, Result};
 use polars::prelude::*;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

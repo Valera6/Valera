@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use valera::display::lib::plotly_closes;
 use valera::exchanges::*;
 use valera::prelude::*;
-use valera::requests;
+use valera::requests::{self, *};
 use valera::types::*;
 
 #[tokio::main]
@@ -17,12 +17,9 @@ async fn main() {
 	let id = payloads[0].0;
 
 	// if we want to persist Id for a specific query, have to do it here.
-	//let query_id: String = match id {
-	//	Some(provided) => provided,
-	//	None => rand::thread_rng().sample_iter(&Alphanumeric).take(16).map(char::from).collect(),
-	//};
+	let provider = Templates::BinancePerp.build();
 
-	requests::api::collect_trades(symbol, Some(start_time), Some(end_time), Some(id)).await;
+	provider.collect_and_dump_trades(symbol, Some(start_time), Some(end_time), Some(id)).await;
 
 	// 2) pull norm volumes against weighted last 4-1m.
 

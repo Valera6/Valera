@@ -79,7 +79,7 @@ impl Provider {
 		self.clients[0].assign(query).await?
 	}
 	/// One of the API endpoints. And as such some things that are optional for the `SubQuery`, are required here.
-	pub async fn collect_and_dump_trades(&self, end_url: String, symbols: Symbols, start_time: Timestamp, end_time: Timestamp, params: Option<HashMap<String, String>>, entry_id: String) {
+	pub async fn collect_and_dump_trades(&self, end_url: String, symbols: Symbols, start_time: Timestamp, end_time: Timestamp) {
 		// // init params for the request
 		let symbols = symbols.as_strings();
 		let grid_pos = QueryGridPos { x: 0, y: 0 };

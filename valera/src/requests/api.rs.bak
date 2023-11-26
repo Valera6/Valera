@@ -4,8 +4,8 @@ use polars::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::requests::client::{QueryGridPos, SubQuery};
 use crate::requests::Provider;
-use crate::requests::client::{SubQuery, QueryGridId};
 
 #[derive(Default)]
 pub struct Args {
@@ -81,8 +81,6 @@ impl Args {
 // Ok(())
 //
 //}
-
-///_args_: `end_url` will be appended to the `base_url` of the provider, if any.
 
 //pub async fn get_closes_df() -> DataFrame {
 //	let mut k = get_24hr(Providers::BinancePerp).await;
