@@ -19,7 +19,7 @@ async fn main() {
 	// if we want to persist Id for a specific query, have to do it here.
 	let provider = Templates::BinancePerp.build();
 
-	provider.collect_and_dump_trades(symbol, Some(start_time), Some(end_time), Some(id)).await;
+	provider.collect_and_dump_trades(symbol, start_time, end_time).await;
 
 	// 2) pull norm volumes against weighted last 4-1m.
 
@@ -46,11 +46,19 @@ mod types {
 		let closes_df = requests::api::get_closes_df().await;
 		plotly_closes(closes_df);
 	}
-	fn test_build_payloads() {
+	fn unit_build_payloads() {
 		let _payloads = requests::db_infrastructure::build_payloads("main-trades-log");
+		dbg!(&_payloads);
 	}
-	// async fn test_collect_trades() {
-	// 	let payloads = requests::db_infrastructure::build_payloads("main-trades-log");
-	// 	collect_trades(payloads, Market::BinancePerp).await; //might overwrite existing things
-	// }
+	async fn integration_collect_trades() {
+		let payloads = requests::db_infrastructure::build_payloads("main-trades-log");
+		let symbol = payloads[0].0;
+		let start_time = payloads[0].0;
+		let end_time = payloads[0].0;
+		let id = payloads[0].0;
+
+		let provider = Templates::BinancePerp.build();
+
+		provider.collect_and_dump_trades(symbol, start_time, end_time).await; //might overwrite existing things
+	}
 }

@@ -1,4 +1,5 @@
 use anyhow::{self, Result};
+use std::sync::mpsc::Sender;
 use chrono::{NaiveDateTime, Utc};
 use reqwest::Response;
 use serde::Serialize;
@@ -21,6 +22,8 @@ pub struct Client {
 	rate_limit: Mutex<RateLimit>,
 	api_key: Option<String>,
 	proxy: Option<String>,
+	// we only care that this is a `Sender`.
+	//sub_queries: Mutex<Vec<SubQuery>>,
 }
 impl Client {
 	pub fn build(client_specific: ClientSpecific, rate_limit: i32, calc_used: Box<dyn Fn(i32, &reqwest::Response) -> i32>) -> Self {
@@ -29,8 +32,6 @@ impl Client {
 		let rate_limit = RateLimit::build(rate_limit, calc_used);
 		return Client { api_key, rate_limit, proxy };
 	}
-	//TODO!!!: assigning/stealing
-	//pub fn assign(
 	pub async fn request<T: Serialize + ?Sized>(&self, url: String, params: &T) -> Result<reqwest::Response> {
 		let mut headers = reqwest::header::HeaderMap::new();
 		if let Some(key) = &self.api_key {
@@ -59,8 +60,8 @@ impl Client {
 
 		Ok(r)
 	}
-	pub async fn assign_sub_query<T>(&self, sub_query: SubQuery<T>) {
-		//TODO!: store sub_query on the client itself. And when the time is ripe, have the client's general runtime attend to it.
+	pub fn start_next(&self) {
+		//TODO!!!!!: pop and start the first sub_query on self
 		todo!();
 	}
 }

@@ -3,6 +3,7 @@ use polars::prelude::*;
 use polars::prelude::{df, DataFrame, NamedFrom};
 use rand::{distributions::Alphanumeric, Rng};
 use std::collections::HashMap;
+use std::mspc::Seder;
 use std::path::PathBuf;
 
 use crate::requests::client::*;
@@ -74,9 +75,9 @@ impl Provider {
 	pub fn url(&self, end_url: String) -> String {
 		format!("{}{}", self.base_url.clone(), end_url)
 	}
-	pub async fn submit<T>(&self, query: SubQuery<T>) {
+	pub fn submit<T>(&self, query: SubQuery<T>) {
 		//TODO!!: do checking of the busyness of clients and its implementation on client's side
-		self.clients[0].assign(query).await?
+		self.clients[0].assign(query)
 	}
 	/// One of the API endpoints. And as such some things that are optional for the `SubQuery`, are required here.
 	pub async fn collect_and_dump_trades(&self, end_url: String, symbols: Symbols, start_time: Timestamp, end_time: Timestamp) {

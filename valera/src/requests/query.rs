@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use polars::prelude::*;
 use std::collections::HashMap;
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
 use crate::requests::client::*;
@@ -27,9 +28,9 @@ pub struct QueryGridPos {
 	pub y: u32,
 }
 
-pub struct SubQuery<T> {
+pub struct SubQuery {
+	sender: Sender,
 	url: String,
-	parent: Query<T>,
 	logic: Box<dyn Fn()>,
 	grid_pos: QueryGridPos,
 	start_time: Option<Timestamp>,
@@ -40,10 +41,10 @@ pub struct SubQuery<T> {
 	weight: u32,
 }
 
-impl<T> SubQuery<T> {
+impl SubQuery {
 	pub fn build(
+		sender: Sender,
 		url: String,
-		parent: Query<T>,
 		logic: Box<dyn Fn()>,
 		grid_pos: QueryGridPos,
 		start_time: Option<Timestamp>,
@@ -52,8 +53,8 @@ impl<T> SubQuery<T> {
 		weight: u32,
 	) -> Self {
 		SubQuery {
+			sender,
 			url,
-			parent,
 			logic,
 			grid_pos,
 			start_time,
