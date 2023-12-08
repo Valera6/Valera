@@ -34,6 +34,7 @@ impl Client {
 	}
 	pub async fn request<T: Serialize + ?Sized>(&self, url: String, params: &T) -> Result<reqwest::Response> {
 		let mut headers = reqwest::header::HeaderMap::new();
+		//TODO!!!!: move into the provider, so it supplies an immidiately appendable to headers bit
 		if let Some(key) = &self.api_key {
 			headers.insert("X-MBX-APIKEY", key.parse().unwrap());
 		}

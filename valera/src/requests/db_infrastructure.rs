@@ -1,7 +1,14 @@
 use crate::types::*;
 use polars::prelude::{ParquetReader, SerReader};
 
-pub fn build_payloads(name: &str) -> Vec<(Box<dyn Symbol>, Timestamp, Timestamp, String)> {
+pub struct LogEntry {
+	symbol: Box<dyn Symbol>,
+	start_time: Timestamp,
+	end_time: Timestamp,
+	id: String,
+}
+
+pub fn build_payloads(name: &str) -> Vec<LogEntry> {
 	//TODO!: make into gRPC call
 
 	let filename = ["./_/", name, ".parquet"].concat();

@@ -3,23 +3,11 @@ use polars::prelude::*;
 use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
+use polars::prelude::{df, NamedFrom, DataFrame};
 
 use crate::requests::client::*;
 use crate::requests::providers::*;
 use crate::types::*;
-
-/// Where `SubQuery`s are stored.
-/// _Ex init_: `let query = Query::<DataFrame>::new()`
-pub struct Query<T>(Arc<Mutex<Vec<T>>>); // want to have as a newtype in case I want to drop references into tui or other places on `::new()`
-impl<T> Query<T> {
-	pub fn new() -> Query<Result<T>> {
-		Query(Arc::new(Mutex::new(Vec::<Result<T>>::new())))
-	}
-	pub fn append_result(&self, sub_query_result: Result<T>) {
-		let mut data = self.0.lock().unwrap();
-		data.push(sub_query_result);
-	}
-}
 
 /// Schedulers put the split parts on the 2D grid, to later reconstruct.
 /// `horizontal` used for coins, `vertical` used for time intervals.
@@ -28,7 +16,7 @@ pub struct QueryGridPos {
 	pub y: u32,
 }
 
-pub struct SubQuery {
+pub struct Query {
 	sender: Sender,
 	url: String,
 	logic: Box<dyn Fn()>,
@@ -41,7 +29,7 @@ pub struct SubQuery {
 	weight: u32,
 }
 
-impl SubQuery {
+impl Query {
 	pub fn build(
 		sender: Sender,
 		url: String,
@@ -52,7 +40,7 @@ impl SubQuery {
 		other_params: HashMap<String, String>,
 		weight: u32,
 	) -> Self {
-		SubQuery {
+		Query {
 			sender,
 			url,
 			logic,
@@ -63,8 +51,18 @@ impl SubQuery {
 			weight,
 		}
 	}
-	/// A wrapper function around `logic` field of the SubQuery, that 1) allows access to all its fields, which would normally be difficult to get the compiler to like, 2) convenient way to implement repetetivve things, like checking whether `start_time` and `end_time` are `Some` to determine whether the request is singular, or we should loop.
+	/// A wrapper function around `logic` field of the Query, that 1) allows access to all its fields, which would normally be difficult to get the compiler to like, 2) convenient way to implement repetetivve things, like checking whether `start_time` and `end_time` are `Some` to determine whether the request is singular, or we should loop.
 	pub async fn execute(&self, client: &Client) {
+		pub fn trades_entry_into_row(entry: &serde_json::Value) -> DataFrame {
+			df!(
+				"time_ms" => vec![entry.get("time").unwrap().as_i64().unwrap()],
+				"price" => vec![entry.get("price").unwrap().as_str().unwrap().parse::<f64>().unwrap()],
+				"qty" => vec![entry.get("quoteQty").unwrap().as_str().unwrap().parse::<f64>().unwrap()],
+				"isBuyerMaker" => vec![entry.get("isBuyerMaker").unwrap().as_bool().unwrap()],
+			)
+				.unwrap()
+		}
+
 		//TODO!: 1) put the logic into a closure, use `move` keywoard if needed.
 		//TODO!: 2) move out to be held by the `logic` field
 
@@ -104,7 +102,7 @@ impl SubQuery {
 			for v in array_of_values.iter() {
 				let t = v.get("time").unwrap().as_i64().unwrap();
 				if t <= end_time.ms {
-					let row: DataFrame = market.trades_entry_into_row(&v);
+					let row: DataFrame = trades_entry_into_row(&v);
 					buffer_df.vstack_mut(&row).unwrap();
 				}
 				new_from_id = (v.get("id").unwrap().as_i64().unwrap() + 1).to_string(); // because the thing is inclusive, I checked.

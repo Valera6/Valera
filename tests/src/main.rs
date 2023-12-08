@@ -7,19 +7,11 @@ use valera::prelude::*;
 use valera::requests::{self, *};
 use valera::types::*;
 
+use crate::requests::db_infrastructure::LogEntry;
+
 #[tokio::main]
 async fn main() {
-	let payloads = requests::db_infrastructure::build_payloads("main-trades-log");
-	//dbg
-	let symbol = payloads[0].0;
-	let start_time = payloads[0].0;
-	let end_time = payloads[0].0;
-	let id = payloads[0].0;
-
-	// if we want to persist Id for a specific query, have to do it here.
-	let provider = Templates::BinancePerp.build();
-
-	provider.collect_and_dump_trades(symbol, start_time, end_time).await;
+	// 1) load and dump the pandas datatframes with the trades
 
 	// 2) pull norm volumes against weighted last 4-1m.
 
@@ -37,28 +29,19 @@ async fn main() {
 #[cfg(test)]
 mod types {
 	use super::*;
-	// fn test_get_klines() {
-	// 	let b = Binance::new();
-	// 	let k = b.get_klines("perp".into(), &UsdtSymbol::from("btc"), Timestamp::now().subtract(3 * 5 * 60), Timestamp::now(), "5m".into());
-	// 	assert_eq!(k.tf.as_str(), "5m");
-	// }
 	async fn test_plotly_klines() {
 		let closes_df = requests::api::get_closes_df().await;
 		plotly_closes(closes_df);
 	}
 	fn unit_build_payloads() {
-		let _payloads = requests::db_infrastructure::build_payloads("main-trades-log");
+		let _payloads: Vec<LogEntry> = requests::db_infrastructure::build_payloads("main-trades-log");
 		dbg!(&_payloads);
 	}
 	async fn integration_collect_trades() {
-		let payloads = requests::db_infrastructure::build_payloads("main-trades-log");
-		let symbol = payloads[0].0;
-		let start_time = payloads[0].0;
-		let end_time = payloads[0].0;
-		let id = payloads[0].0;
+		let payloads: Vec<LogEntry> = requests::db_infrastructure::build_payloads("main-trades-log");
 
 		let provider = Templates::BinancePerp.build();
 
-		provider.collect_and_dump_trades(symbol, start_time, end_time).await; //might overwrite existing things
+		provider.collect_and_dump_trades(payloads[0]).await; //might overwrite the previous query
 	}
 }
