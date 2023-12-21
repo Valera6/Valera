@@ -1,14 +1,13 @@
 use anyhow::Result;
 use polars::prelude::*;
-use rand::{distributions::Alphanumeric, Rng};
 use std::collections::HashMap;
-use std::mspc::Sender;
 use std::path::PathBuf;
+use tokio::sync::mpsc::{self, Receiver, Sender};
 
 use crate::requests::client::*;
+use crate::requests::db_infrastructure::LogEntry;
 use crate::requests::query::*;
 use crate::types::*;
-use crate::db_infrastructure::LogEntry;
 
 pub enum Templates {
 	//TODO!: add the rest of the binance providers.
@@ -23,7 +22,7 @@ impl Templates {
 	pub fn build(&self) -> Provider {
 		match self {
 			Self::BinancePerp => Provider::build(
-				vec![ClientSpecific {
+				vec![ClientInit {
 					api_key: Some(std::env::var("BINANCE_MAIN_KEY").unwrap()),
 					proxy: None,
 				}],
@@ -56,7 +55,7 @@ impl Provider {
 	pub fn default() -> Self {
 		todo!()
 	}
-	pub fn build<F>(clients: Vec<ClientSpecific>, rate_limit: i32, base_url: Option<&str>, calc_used: Box<F>, name: String) -> Self
+	pub fn build<F>(clients: Vec<ClientInit>, rate_limit: i32, base_url: Option<&str>, calc_used: Box<F>, name: String) -> Self
 	where
 		F: Fn(i32, &reqwest::Response) -> i32 + Clone,
 	{
@@ -75,31 +74,47 @@ impl Provider {
 	pub fn url(&self, end_url: String) -> String {
 		format!("{}{}", self.base_url.clone(), end_url)
 	}
-	pub fn submit<T>(&self, query: Query<T>) {
-		//TODO!!: do checking of the busyness of clients and its implementation on client's side
-		self.clients[0].assign(query)
+	pub fn submit(&self, queries: Vec<Query>) {
+		//TODO!!: do checking of the busyness of clients (inlined!)
+		//dbg
+		{
+			self.clients[0].queries.lock().unwrap().append(queries);
+		}
+		self.clients[0].try_start_more();
 	}
 	/// One of the API endpoints. And as such some things that are optional for the `SubQuery`, are required here.
 	pub async fn collect_and_dump_trades(&self, log_entry: LogEntry) {
 		// // init params for the request
-		let symbols = LogEntry.symbols.as_strings();
+		//TODO!!!!!!!!: make the Box<symbol> into a string
+		let symbol: String = log_entry.symbol.inner();
 		let grid_pos = QueryGridPos { x: 0, y: 0 };
 		let url = self.url("/historicalTrades".to_owned());
 
-		//TODO!!!!!!!!!: init (tx, rx), than hold rx right within this function
-		let symbol = symbols[0].clone(); //dbg
+		let (tx, mut rx) = mpsc::unbounded_channel::<Box<dyn std::any::Any + Send + Sync>>();
+
 		let mut other_params = HashMap::new();
 		other_params.insert("symbol".to_owned(), symbol); //dbg
 		other_params.insert("limit".to_owned(), 1000.to_string()); //dbg
 
 		let logic = || println!("Implement this later. For now simplest thing to get the infrastructure working");
-
-		let query = Query::build(tx, url, logic, grid_pos, Some(LogEntry.start_time), Some(LogEntry.end_time), other_params, 20);
 		//
+
+		let queries = vec![Query::build(
+			tx,
+			url,
+			Box::new(logic),
+			grid_pos,
+			Some(log_entry.start_time),
+			Some(log_entry.end_time),
+			other_params,
+			20,
+		)];
+
+		self.submit(queries);
 
 		//dbg
 		while let Some(i) = rx.recv().await {
-			println!("got = {}", i);
+			dbg!("here we go: {}", i);
 		}
 
 		// // Create dir to be dumping into. For now it doesn't have to be before the submition of the queries, but later this might be important for dynamic unloading with polar's `parquet_sync`.
@@ -114,9 +129,8 @@ impl Provider {
 
 		// later will be `Vec<DataFrame>`
 		//BUG: not how this works.
-		let df: DataFrame = self.submit(query);
-		dump_path.push(entry_id + ".parquet");
-		df.lazy().sink_parquet(dump_path, ParquetWriteOptions::default()).unwrap();
+		//dump_path.push(entry_id + ".parquet");
+		//df.lazy().sink_parquet(dump_path, ParquetWriteOptions::default()).unwrap();
 	}
 }
 
@@ -160,4 +174,3 @@ impl Provider {
 //	let k: Klines = df.try_into().unwrap();
 //	k
 //}
-

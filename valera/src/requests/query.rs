@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
 use polars::prelude::*;
+use polars::prelude::{df, DataFrame, NamedFrom};
+use std::any::Any;
 use std::collections::HashMap;
-use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
-use polars::prelude::{df, NamedFrom, DataFrame};
+use tokio::std::sync::mpsc::UnboundedSender;
 
 use crate::requests::client::*;
 use crate::requests::providers::*;
@@ -17,7 +18,7 @@ pub struct QueryGridPos {
 }
 
 pub struct Query {
-	sender: Sender,
+	sender: UnboundedSender<Box<dyn Any + Send + Sync>>,
 	url: String,
 	logic: Box<dyn Fn()>,
 	grid_pos: QueryGridPos,
@@ -31,7 +32,7 @@ pub struct Query {
 
 impl Query {
 	pub fn build(
-		sender: Sender,
+		sender: UnboundedSender<Box<dyn Any + Send + Sync>>,
 		url: String,
 		logic: Box<dyn Fn()>,
 		grid_pos: QueryGridPos,
@@ -60,7 +61,7 @@ impl Query {
 				"qty" => vec![entry.get("quoteQty").unwrap().as_str().unwrap().parse::<f64>().unwrap()],
 				"isBuyerMaker" => vec![entry.get("isBuyerMaker").unwrap().as_bool().unwrap()],
 			)
-				.unwrap()
+			.unwrap()
 		}
 
 		//TODO!: 1) put the logic into a closure, use `move` keywoard if needed.
@@ -89,10 +90,11 @@ impl Query {
 		let mut last_reached_ms = self.start_time.unwrap().ms;
 		let mut buffer_df = DataFrame::default();
 		while last_reached_ms < self.end_time.unwrap().ms {
-			// In the perfect world check the code, and never print out the same error code twice.
-			let r = match client.request(url, &params).await {
-				Ok(response) => response,
-				Err(e) => eprintln!("Request errored: {}", e),
+			let r = if let Ok(response) = client.request(url, &params).await {
+				response
+			} else {
+				eprintln!("Request errored");
+				continue;
 			};
 
 			let r_json = r.json::<serde_json::Value>().await.unwrap();
@@ -101,15 +103,15 @@ impl Query {
 			let mut new_fromid = String::new();
 			for v in array_of_values.iter() {
 				let t = v.get("time").unwrap().as_i64().unwrap();
-				if t <= end_time.ms {
+				if t <= self.end_time.unwrap().ms {
 					let row: DataFrame = trades_entry_into_row(&v);
 					buffer_df.vstack_mut(&row).unwrap();
 				}
-				new_from_id = (v.get("id").unwrap().as_i64().unwrap() + 1).to_string(); // because the thing is inclusive, I checked.
+				new_fromid = (v.get("id").unwrap().as_i64().unwrap() + 1).to_string(); // because the thing is inclusive, I checked.
 				last_reached_ms = v.get("time").unwrap().as_i64().unwrap();
 			}
-			params.insert("fromId".to_owned(), Box::leak(new_from_id.clone().into_boxed_str()));
+			params.insert("fromId".to_owned(), new_fromid.clone());
 		}
-		self.parent.append_result(buffer_df);
+		self.sender.send(buffer_df).unwrap();
 	}
 }

@@ -1,6 +1,6 @@
 [package]
 name = "valera"
-version = "0.1.0"
+version = "0.1.1"
 description = "Standardizes klines objects, their rendering, and DS methods implemented on them"
 edition = "2021"
 rust-version = "1.72"

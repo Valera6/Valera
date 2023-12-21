@@ -9,11 +9,10 @@ use polars::prelude::*;
 #[derive(Debug, Default)]
 pub struct Klines {
 	pub df: DataFrame,
-	pub market: Providers,
 	pub tf: Timeframe,
 	pub normalized: bool,
-	pub full: bool,
 }
+// the `full` thing is not gonna mirror across providers, so will just define exact structs with fields, which will be collcted by some `full()` api endpoint on `Provider`
 
 //todo add .to_full() // which includes normalized volume too
 impl Klines {
@@ -48,7 +47,8 @@ impl Klines {
 			for name in columns {
 				if let Ok(series) = df.column(name) {
 					let zero_value: f64 = series.get(zero_index.try_into().unwrap()).unwrap().try_extract::<f64>().unwrap();
-					let normalize_series = |s: &Series| -> Series { s.f64().unwrap().apply(|x| (x / zero_value).ln()).into_series() };
+					let normalize_series = |s: &Series| -> Series { s.f64().unwrap().apply(|x| Some((x.unwrap() / zero_value).ln())).into_series() };
+
 					df.apply(name, normalize_series).unwrap();
 				}
 			}

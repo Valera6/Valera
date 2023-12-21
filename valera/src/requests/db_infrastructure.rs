@@ -1,11 +1,11 @@
 use crate::types::*;
-use polars::prelude::{ParquetReader, SerReader};
+use polars::prelude::ParquetReader;
 
 pub struct LogEntry {
-	symbol: Box<dyn Symbol>,
-	start_time: Timestamp,
-	end_time: Timestamp,
-	id: String,
+	pub symbol: Box<dyn Symbol>,
+	pub start_time: Timestamp,
+	pub end_time: Timestamp,
+	pub id: String,
 }
 
 pub fn build_payloads(name: &str) -> Vec<LogEntry> {
@@ -15,7 +15,7 @@ pub fn build_payloads(name: &str) -> Vec<LogEntry> {
 	let _file = std::fs::File::open(filename.as_str()).unwrap();
 	let df = ParquetReader::new(_file).finish().unwrap();
 
-	let mut payloads: Vec<(Box<dyn Symbol>, Timestamp, Timestamp, String)> = Vec::new();
+	let mut payloads: Vec<LogEntry> = Vec::new();
 	let n_rows = df.height();
 	for i in 0..n_rows {
 		let row = df.get_row(i).unwrap();
@@ -28,7 +28,12 @@ pub fn build_payloads(name: &str) -> Vec<LogEntry> {
 		let end_time = Timestamp::from(timestamp).add(150);
 		let id = id.to_owned();
 
-		payloads.push((Box::new(symbol), start_time, end_time, id));
+		payloads.push(LogEntry {
+			symbol: Box::new(symbol),
+			start_time,
+			end_time,
+			id,
+		});
 	}
 	payloads
 }

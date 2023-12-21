@@ -14,7 +14,7 @@ use crate::requests::query::*;
 use crate::types::*;
 
 #[derive(Debug)]
-pub struct ClientSpecific {
+pub struct ClientInit {
 	pub api_key: Option<String>,
 	pub proxy: Option<String>,
 }
@@ -22,15 +22,14 @@ pub struct Client {
 	rate_limit: Mutex<RateLimit>,
 	api_key: Option<String>,
 	proxy: Option<String>,
-	// we only care that this is a `Sender`.
-	//sub_queries: Mutex<Vec<SubQuery>>,
+	queries: Mutex<Vec<Query>>,
 }
 impl Client {
-	pub fn build(client_specific: ClientSpecific, rate_limit: i32, calc_used: Box<dyn Fn(i32, &reqwest::Response) -> i32>) -> Self {
+	pub fn build(client_specific: ClientInit, rate_limit: i32, calc_used: Box<dyn Fn(i32, &reqwest::Response) -> i32>) -> Self {
 		let api_key = client_specific.api_key;
 		let proxy = client_specific.proxy;
 		let rate_limit = RateLimit::build(rate_limit, calc_used);
-		return Client { api_key, rate_limit, proxy };
+		return Client { api_key, rate_limit, proxy, queries: Vec::<Query>::new().into() };
 	}
 	pub async fn request<T: Serialize + ?Sized>(&self, url: String, params: &T) -> Result<reqwest::Response> {
 		let mut headers = reqwest::header::HeaderMap::new();
@@ -60,9 +59,8 @@ impl Client {
 		}
 
 		Ok(r)
-	}
-	pub fn start_next(&self) {
-		//TODO!!!!!: pop and start the first sub_query on self
+	}	
+	pub fn try_start_more(&self) {
 		todo!();
 	}
 }

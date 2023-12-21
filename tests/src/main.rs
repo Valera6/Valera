@@ -11,6 +11,8 @@ use crate::requests::db_infrastructure::LogEntry;
 
 #[tokio::main]
 async fn main() {
+	println!("I like turtles");
+
 	// 1) load and dump the pandas datatframes with the trades
 
 	// 2) pull norm volumes against weighted last 4-1m.
