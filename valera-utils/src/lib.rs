@@ -2,16 +2,6 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub fn alert() {
-	let sound_bytes = include_bytes!("../Notification.mp3");
-	let cursor = std::io::Cursor::new(sound_bytes);
-	let source = rodio::Decoder::new(cursor).unwrap();
-	let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
-	let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-	sink.append(source);
-	sink.sleep_until_end();
-}
-
 pub fn get_caller_name() -> String {
 	let bt = backtrace::Backtrace::new();
 	let get_name = |index: usize| -> String {
@@ -24,26 +14,6 @@ pub fn get_caller_name() -> String {
 			.unwrap_or_else(|| "unknown".to_string())
 	};
 	format!("{}", get_name(1))
-}
-
-/// a thing that sends me a ping. Crate for myself, so this is configured out of the box. For personal use, change the receiver. Or submit a pull request that does this properly
-pub fn tg_msg(text: Option<&str>) {
-	let message = match text {
-		Some(t) => t.to_string(),
-		None => format!("{} has finished", get_caller_name()),
-	};
-	let params = [("chat_id", "-1001800341082"), ("text", &message)];
-	let _ = reqwest::blocking::Client::new()
-		.post("https://api.telegram.org/bot6225430873:AAEYlbJ2bY-WsLADxlWY1NS-z4r75sf9X5I/sendMessage")
-		.form(&params)
-		.send();
-}
-pub fn tg() {
-	tg_msg(None);
-}
-
-pub fn shutdown() {
-	std::process::Command::new("shutdown").args(["/s", "/t", "1"]).output().unwrap();
 }
 
 #[derive(Clone, Debug)]
